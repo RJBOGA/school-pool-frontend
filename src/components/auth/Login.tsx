@@ -6,6 +6,7 @@ import { z } from 'zod';
 import Layout from '../layout/Layout';
 import { userService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
+import { UserRole } from '../../types/enums';
 
 const loginSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
@@ -32,15 +33,22 @@ const Login = () => {
     try {
       setIsSubmitting(true);
       setError('');
-
-      const response = await userService.login(data);
+  
+      //const response = await userService.login(data);
       const user = await userService.getUserById(data.phone);
       
-      if (user.password == data.password) {
-        login(user);
-        navigate('/dashboard');
+      if (user.password === data.password) {
+        login(user); // Store user in auth context
+        console.log(user)
+        
+        // Redirect based on user role
+        if (user.role === UserRole.STUDENT) {
+          navigate('/user/dashboard');
+        } else if (user.role === UserRole.DRIVER) {
+          navigate('/dashboard');
+        }
       } else {
-        setError(response.message);
+        setError('Invalid credentials');
       }
     } catch (error) {
       setError('An error occurred during login');
