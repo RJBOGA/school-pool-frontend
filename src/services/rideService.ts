@@ -41,6 +41,16 @@ class RideService {
     const response = await api.get<Ride[]>(this.BASE_PATH, { params });
     return response.data;
   }
+
+  async getAvailableRides(): Promise<Ride[]> {
+    try {
+      const response = await api.get<Ride[]>(`${this.BASE_PATH}/available`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching available rides:', error);
+      throw error;
+    }
+  }
 }
 
 export default new RideService();

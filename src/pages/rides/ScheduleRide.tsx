@@ -1,21 +1,29 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MapPin, Clock, Users, DollarSign } from 'lucide-react';
-import Layout from '../../components/layout/Layout';
-import { useAuth } from '../../contexts/AuthContext';
-import { rideService } from '../../services';
-import { RideStatus } from '../../types';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MapPin, Clock, Users, DollarSign } from "lucide-react";
+import Layout from "../../components/layout/Layout";
+import { useAuth } from "../../contexts/AuthContext";
+import { rideService } from "../../services";
+import { RideStatus } from "../../types";
+import { LOCATIONS } from "../../constants/locations";
+import { InformationCircleIcon } from "@heroicons/react/16/solid";
 
 // Form validation schema
 const scheduleRideSchema = z.object({
-  origin: z.string().min(1, 'Starting location is required'),
-  destination: z.string().min(1, 'Destination is required'),
-  departureTime: z.string().min(1, 'Departure time is required'),
-  totalSeats: z.number().min(1, 'Must offer at least 1 seat').max(8, 'Maximum 8 seats allowed'),
-  price: z.number().min(0, 'Price must be positive').max(1000, 'Price too high'),
+  origin: z.string().min(1, "Starting location is required"),
+  destination: z.string().min(1, "Destination is required"),
+  departureTime: z.string().min(1, "Departure time is required"),
+  totalSeats: z
+    .number()
+    .min(1, "Must offer at least 1 seat")
+    .max(8, "Maximum 8 seats allowed"),
+  price: z
+    .number()
+    .min(0, "Price must be positive")
+    .max(1000, "Price too high"),
 });
 
 type ScheduleRideForm = z.infer<typeof scheduleRideSchema>;
@@ -28,13 +36,13 @@ const ScheduleRide = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm<ScheduleRideForm>({
     resolver: zodResolver(scheduleRideSchema),
     defaultValues: {
       totalSeats: 1,
-      price: 0
-    }
+      price: 0,
+    },
   });
 
   const onSubmit = async (data: ScheduleRideForm) => {
@@ -42,18 +50,18 @@ const ScheduleRide = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       const rideData = {
         ...data,
         driver: user,
         status: RideStatus.SCHEDULED,
-        availableSeats: data.totalSeats
+        availableSeats: data.totalSeats,
       };
 
       await rideService.createRide(rideData);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Failed to schedule ride:', error);
+      console.error("Failed to schedule ride:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -63,10 +71,14 @@ const ScheduleRide = () => {
     <Layout>
       <div className="container mx-auto px-4 py-8 mt-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Schedule a Ride</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            Schedule a Ride
+          </h1>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white rounded-lg shadow p-6">
-            {/* Origin */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6 bg-white rounded-lg shadow p-6"
+          >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Starting Location
@@ -75,19 +87,24 @@ const ScheduleRide = () => {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MapPin className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  {...register('origin')}
-                  type="text"
+                <select
+                  {...register("origin")}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter pickup location"
-                />
+                >
+                  <option value="">Select pickup location</option>
+                  {Object.entries(LOCATIONS).map(([key, value]) => (
+                    <option key={key} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
               </div>
               {errors.origin && (
-                <p className="mt-1 text-sm text-red-600">{errors.origin.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.origin.message}
+                </p>
               )}
             </div>
-
-            {/* Destination */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Destination
@@ -96,18 +113,24 @@ const ScheduleRide = () => {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MapPin className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  {...register('destination')}
-                  type="text"
+                <select
+                  {...register("destination")}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter destination"
-                />
+                >
+                  <option value="">Select destination</option>
+                  {Object.entries(LOCATIONS).map(([key, value]) => (
+                    <option key={key} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
               </div>
               {errors.destination && (
-                <p className="mt-1 text-sm text-red-600">{errors.destination.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.destination.message}
+                </p>
               )}
             </div>
-
             {/* Departure Time */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,16 +141,18 @@ const ScheduleRide = () => {
                   <Clock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('departureTime')}
+                  {...register("departureTime")}
                   type="datetime-local"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  min={new Date().toISOString().slice(0, 16)}
                 />
               </div>
               {errors.departureTime && (
-                <p className="mt-1 text-sm text-red-600">{errors.departureTime.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.departureTime.message}
+                </p>
               )}
             </div>
-
             {/* Number of Seats */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -138,7 +163,7 @@ const ScheduleRide = () => {
                   <Users className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('totalSeats', { valueAsNumber: true })}
+                  {...register("totalSeats", { valueAsNumber: true })}
                   type="number"
                   min="1"
                   max="8"
@@ -146,10 +171,11 @@ const ScheduleRide = () => {
                 />
               </div>
               {errors.totalSeats && (
-                <p className="mt-1 text-sm text-red-600">{errors.totalSeats.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.totalSeats.message}
+                </p>
               )}
             </div>
-
             {/* Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -160,7 +186,7 @@ const ScheduleRide = () => {
                   <DollarSign className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('price', { valueAsNumber: true })}
+                  {...register("price", { valueAsNumber: true })}
                   type="number"
                   min="0"
                   step="0.01"
@@ -168,15 +194,20 @@ const ScheduleRide = () => {
                 />
               </div>
               {errors.price && (
-                <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.price.message}
+                </p>
               )}
             </div>
-
+            <div className="flex items-center text-gray-600">
+                          <InformationCircleIcon className="mr-2 h-5 w-5" />
+                          Payments are received only through cash from the students.
+                        </div>
             {/* Submit Button */}
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Cancel
@@ -186,7 +217,7 @@ const ScheduleRide = () => {
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
               >
-                {isSubmitting ? 'Scheduling...' : 'Schedule Ride'}
+                {isSubmitting ? "Scheduling..." : "Schedule Ride"}
               </button>
             </div>
           </form>

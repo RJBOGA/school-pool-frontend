@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MapPin, Calendar, Clock, Users, DollarSign } from 'lucide-react';
-import Layout from '../../components/layout/Layout';
-import { useAuth } from '../../contexts/AuthContext';
-import { rideService } from '../../services';
-import { Ride, RideStatus } from '../../types';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MapPin, Calendar, Clock, Users, DollarSign } from "lucide-react";
+import Layout from "../../components/layout/Layout";
+import { useAuth } from "../../contexts/AuthContext";
+import { rideService } from "../../services";
+import { Ride, RideStatus } from "../../types";
 
 const editRideSchema = z.object({
-  origin: z.string().min(1, 'Starting location is required'),
-  destination: z.string().min(1, 'Destination is required'),
-  departureTime: z.string().min(1, 'Departure time is required'),
-  totalSeats: z.number().min(1, 'Must offer at least 1 seat').max(8, 'Maximum 8 seats allowed'),
-  price: z.number().min(0, 'Price must be positive').max(1000, 'Price too high'),
+  origin: z.string().min(1, "Starting location is required"),
+  destination: z.string().min(1, "Destination is required"),
+  departureTime: z.string().min(1, "Departure time is required"),
+  totalSeats: z
+    .number()
+    .min(1, "Must offer at least 1 seat")
+    .max(8, "Maximum 8 seats allowed"),
+  price: z
+    .number()
+    .min(0, "Price must be positive")
+    .max(1000, "Price too high"),
 });
 
 type EditRideForm = z.infer<typeof editRideSchema>;
@@ -25,15 +31,15 @@ const EditRide = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm<EditRideForm>({
-    resolver: zodResolver(editRideSchema)
+    resolver: zodResolver(editRideSchema),
   });
 
   // Load existing ride data
@@ -42,7 +48,7 @@ const EditRide = () => {
       try {
         if (!id) return;
         const ride = await rideService.getRideById(id);
-        
+
         // Format the date for the datetime-local input
         const formattedDate = new Date(ride.departureTime)
           .toISOString()
@@ -56,8 +62,8 @@ const EditRide = () => {
           price: ride.price,
         });
       } catch (error) {
-        console.error('Error loading ride:', error);
-        setError('Failed to load ride details');
+        console.error("Error loading ride:", error);
+        setError("Failed to load ride details");
       } finally {
         setIsLoading(false);
       }
@@ -68,11 +74,11 @@ const EditRide = () => {
 
   const onSubmit = async (data: EditRideForm) => {
     if (!id || !user) return;
-  
+
     try {
       setIsSubmitting(true);
-      setError('');
-  
+      setError("");
+
       // Only send fields that were changed
       const updatedFields: Partial<Ride> = {
         origin: data.origin,
@@ -82,12 +88,12 @@ const EditRide = () => {
         availableSeats: data.totalSeats, // Update available seats along with total seats
         price: data.price,
       };
-  
+
       await rideService.updateRide(id, updatedFields);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Failed to update ride:', error);
-      setError('Failed to update ride. Please try again.');
+      console.error("Failed to update ride:", error);
+      setError("Failed to update ride. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +121,10 @@ const EditRide = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white rounded-lg shadow p-6">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6 bg-white rounded-lg shadow p-6"
+          >
             {/* Origin */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -126,13 +135,15 @@ const EditRide = () => {
                   <MapPin className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('origin')}
+                  {...register("origin")}
                   type="text"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
               {errors.origin && (
-                <p className="mt-1 text-sm text-red-600">{errors.origin.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.origin.message}
+                </p>
               )}
             </div>
 
@@ -146,13 +157,15 @@ const EditRide = () => {
                   <MapPin className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('destination')}
+                  {...register("destination")}
                   type="text"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
               {errors.destination && (
-                <p className="mt-1 text-sm text-red-600">{errors.destination.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.destination.message}
+                </p>
               )}
             </div>
 
@@ -166,13 +179,16 @@ const EditRide = () => {
                   <Clock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('departureTime')}
+                  {...register("departureTime")}
                   type="datetime-local"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  min={new Date().toISOString().slice(0, 16)}
                 />
               </div>
               {errors.departureTime && (
-                <p className="mt-1 text-sm text-red-600">{errors.departureTime.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.departureTime.message}
+                </p>
               )}
             </div>
 
@@ -186,7 +202,7 @@ const EditRide = () => {
                   <Users className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('totalSeats', { valueAsNumber: true })}
+                  {...register("totalSeats", { valueAsNumber: true })}
                   type="number"
                   min="1"
                   max="8"
@@ -194,7 +210,9 @@ const EditRide = () => {
                 />
               </div>
               {errors.totalSeats && (
-                <p className="mt-1 text-sm text-red-600">{errors.totalSeats.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.totalSeats.message}
+                </p>
               )}
             </div>
 
@@ -208,7 +226,7 @@ const EditRide = () => {
                   <DollarSign className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  {...register('price', { valueAsNumber: true })}
+                  {...register("price", { valueAsNumber: true })}
                   type="number"
                   min="0"
                   step="0.01"
@@ -216,7 +234,9 @@ const EditRide = () => {
                 />
               </div>
               {errors.price && (
-                <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.price.message}
+                </p>
               )}
             </div>
 
@@ -224,7 +244,7 @@ const EditRide = () => {
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Cancel
@@ -234,7 +254,7 @@ const EditRide = () => {
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
               >
-                {isSubmitting ? 'Updating...' : 'Update Ride'}
+                {isSubmitting ? "Updating..." : "Update Ride"}
               </button>
             </div>
           </form>

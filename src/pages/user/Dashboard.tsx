@@ -1,21 +1,365 @@
-import React from 'react';
-import Layout from '../../components/layout/Layout';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Search, Calendar, DollarSign, MapPin, School } from "lucide-react";
+import Layout from "../../components/layout/Layout";
+import { useAuth } from "../../contexts/AuthContext";
+import { rideService, bookingService } from "../../services";
+import { Ride, BookingStatus, Booking } from "../../types";
+import { InformationCircleIcon } from "@heroicons/react/16/solid";
 
-const UserDashboard: React.FC = () => {
+const UserDashboard = () => {
   const { user } = useAuth();
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [filteredRides, setFilteredRides] = useState<Ride[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [priceSort, setPriceSort] = useState<"asc" | "desc" | "">("");
+  const [confirmedRides, setConfirmedRides] = useState<Booking[]>([]);
+  const [rideHistory, setRideHistory] = useState<Booking[]>([]);
+  const [isLoadingConfirmed, setIsLoadingConfirmed] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    if (user?.phone) {
+      console.log("User loaded, fetching rides:", user.phone);
+      loadRides();
+      loadUserRides();
+    }
+  }, []);
+
+  const loadUserRides = async () => {
+    try {
+      if (!user?.phone) {
+        console.log("No user phone available");
+        return;
+      }
+
+      setIsLoadingConfirmed(true);
+      setIsLoadingHistory(true);
+
+      console.log("Loading rides for user:", user.phone);
+      const userBookings = await bookingService.getUserBookings(user.phone);
+      console.log("Received bookings:", userBookings);
+
+      const confirmed = userBookings.filter((booking) => {
+        console.log("Checking booking:", booking);
+        return (
+          booking.status === BookingStatus.CONFIRMED &&
+          new Date(booking.ride.departureTime) > new Date()
+        );
+      });
+
+      const history = userBookings.filter(
+        (booking) =>
+          booking.status === BookingStatus.COMPLETED ||
+          new Date(booking.ride.departureTime) < new Date()
+      );
+
+      console.log("Confirmed rides:", confirmed);
+      console.log("History:", history);
+
+      setConfirmedRides(confirmed);
+      setRideHistory(history);
+    } catch (error) {
+      console.error("Error loading user rides:", error);
+    } finally {
+      setIsLoadingConfirmed(false);
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const loadRides = async () => {
+    try {
+      setIsLoading(true);
+      const availableRides = await rideService.getAvailableRides();
+      console.log(availableRides);
+      setRides(availableRides);
+      setFilteredRides(availableRides);
+    } catch (error) {
+      console.error("Error loading rides:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let result = [...rides];
+
+    // Search filter
+    if (searchTerm) {
+      result = result.filter(
+        (ride) =>
+          ride.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ride.destination.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Date filter
+    if (dateFilter) {
+      result = result.filter((ride) => {
+        const rideDate = new Date(ride.departureTime).toLocaleDateString();
+        const filterDate = new Date(dateFilter).toLocaleDateString();
+        return rideDate === filterDate;
+      });
+    }
+
+    // Price sort
+    if (priceSort) {
+      result.sort((a, b) => {
+        if (priceSort === "asc") {
+          return a.price - b.price;
+        } else {
+          return b.price - a.price;
+        }
+      });
+    }
+
+    setFilteredRides(result);
+  }, [searchTerm, dateFilter, priceSort, rides]);
+
+  const handleRequestRide = async (ride: Ride) => {
+    try {
+      if (!user) return;
+
+      const bookingData = {
+        ride: ride,
+        passenger: user,
+        status: BookingStatus.PENDING,
+        bookingTime: new Date().toISOString(),
+      };
+
+      await bookingService.createBooking(bookingData);
+      // Show success message or notification
+      alert("Ride request sent successfully!");
+    } catch (error) {
+      console.error("Error requesting ride:", error);
+      alert("Failed to request ride. Please try again.");
+    }
+  };
+
+  const formatDateTime = (dateTime: string) => {
+    return new Date(dateTime).toLocaleString();
+  };
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 mt-16">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Welcome, {user?.firstName}!
-          </h1>
-          <p className="text-gray-600">
-            This is your student dashboard. Here you can search for available rides and manage your bookings.
-          </p>
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap gap-4">
+            {/* Search Bar */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  placeholder="Search by location..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Date Filter */}
+            <div className="w-48">
+              <input
+                type="date"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              />
+            </div>
+
+            {/* Price Sort */}
+            <select
+              className="w-48 px-4 py-2 border border-gray-300 rounded-md"
+              value={priceSort}
+              onChange={(e) =>
+                setPriceSort(e.target.value as "asc" | "desc" | "")
+              }
+            >
+              <option value="">Sort by price</option>
+              <option value="asc">Price: Low to High</option>
+              <option value="desc">Price: High to Low</option>
+            </select>
+          </div>
         </div>
+
+        {/* Rides List */}
+        <div className="space-y-4">
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Available Rides
+            </h2>
+            {/* Your existing search, filters, and available rides list */}
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            </div>
+          ) : filteredRides.length === 0 ? (
+            <div className="text-center py-8 bg-white rounded-lg shadow">
+              <p className="text-gray-500">
+                No rides available matching your criteria.
+              </p>
+            </div>
+          ) : (
+            filteredRides.map((ride) => (
+              <div key={ride.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold">
+                    {ride.driver.firstName} {ride.driver.lastName}
+                  </h3>
+                  <div className="flex items-center">
+                    <span className="mr-2">
+                      {ride.availableSeats} Seats Available
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-gray-600">
+                    <MapPin size={20} className="mr-2" />
+                    {ride.origin} → {ride.destination}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <School size={20} className="mr-2" />
+                    {ride.driver.university}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Calendar size={20} className="mr-2" />
+                    Departure: {formatDateTime(ride.departureTime)}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <DollarSign size={20} className="mr-2" />${ride.price}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <InformationCircleIcon className="mr-2 h-5 w-5" />
+                    Due to our policy payments are accepted only through cash to
+                    the rider.
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleRequestRide(ride)}
+                  className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors"
+                >
+                  Request Ride
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      {/* Confirmed Rides Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Your Confirmed Rides
+        </h2>
+        {isLoadingConfirmed ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          </div>
+        ) : confirmedRides.length === 0 ? (
+          <div className="text-center py-4 bg-white rounded-lg shadow">
+            <p className="text-gray-500">No confirmed rides.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {confirmedRides.map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold">
+                    Ride with {booking.ride.driver.firstName}
+                  </h3>
+                  <h3 className="text-lg font-semibold">
+                    Call: {booking.ride.driver.phone}
+                  </h3>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    Confirmed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <MapPin size={20} className="mr-2" />
+                    {booking.ride.origin} → {booking.ride.destination}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Calendar size={20} className="mr-2" />
+                    {formatDateTime(booking.ride.departureTime)}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <DollarSign size={20} className="mr-2" />$
+                    {booking.ride.price}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <InformationCircleIcon className="mr-2 h-5 w-5" />
+                    Due to our policy payments are accepted only through cash to
+                    the rider.
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {/*History*/}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Ride History
+        </h2>
+        {isLoadingHistory ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          </div>
+        ) : rideHistory.length === 0 ? (
+          <div className="text-center py-4 bg-white rounded-lg shadow">
+            <p className="text-gray-500">No ride history.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {rideHistory.map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-white rounded-lg shadow p-6 opacity-75"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold">
+                    Ride with {booking.ride.driver.firstName}
+                  </h3>
+                  <h3 className="text-lg font-semibold">
+                    Call: {booking.ride.driver.phone}
+                  </h3>
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+                    {booking.status}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <MapPin size={20} className="mr-2" />
+                    {booking.ride.origin} → {booking.ride.destination}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Calendar size={20} className="mr-2" />
+                    {formatDateTime(booking.ride.departureTime)}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <DollarSign size={20} className="mr-2" />$
+                    {booking.ride.price}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -1,0 +1,22 @@
+export const LOCATIONS = {
+    Cambridge: "Cambridge Square Apartments",
+    Carson: "Carson Street Towers",
+    CorbinCrossing: "Corbin Crossing Apartments",
+    CorbinGreens: "Corbin Greens",
+    Downtown: "Downtown Kansas City",
+    Fairways: "The Fairways at Corbin Park",
+    LakesLionsgate: "Lakes at Lionsgate",
+    LeesSummit: "Lees Summit",
+    Leewood: "Leewood Apartments",
+    Lodge: "Lodge of Overland Park",
+    MIC: "Missouri Innovation Campus",
+    OverlandPark: "Overland Park",
+    PointeRoyal: "Pointe Royal",
+    Prairiefire: "Residences at Prairiefire",
+    Sandstone: "Sandstone Creek",
+    Savoy: "Savoy Apartments",
+    Skylar: "Skylar Ridge Apartments",
+    Warrensburg: "University of Central Missouri - Warrensburg",
+    UMKC: "University of Missouri - Kansas City",
+    VillageLionsgate: "Village at Lionsgate"
+  } as const;
