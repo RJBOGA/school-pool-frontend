@@ -1,6 +1,5 @@
 import api from "./api";
 import { Booking, ApiResponse, BookingStatus } from "../types";
-import { useAuth } from "../contexts/AuthContext";
 
 class BookingService {
   private readonly BASE_PATH = "/bookings";
@@ -60,6 +59,16 @@ class BookingService {
       return response.data;
     } catch (error) {
       console.error("Error fetching pending bookings:", error);
+      throw error;
+    }
+  }
+
+  async getDriverBookings(driverPhone: string): Promise<Booking[]> {
+    try {
+      const response = await api.get<Booking[]>(`${this.BASE_PATH}/driver/${driverPhone}/all`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching driver bookings:', error);
       throw error;
     }
   }

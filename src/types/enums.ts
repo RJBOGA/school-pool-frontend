@@ -17,3 +17,9 @@ export enum UserRole {
     CANCELLED = 'CANCELLED',
     COMPLETED = 'COMPLETED'
   }
+
+  export enum RiderStatus {
+    PENDING = 'PENDING',
+    ACTIVE = 'ACTIVE',
+    INACTIVE = 'INACTIVE'
+  }

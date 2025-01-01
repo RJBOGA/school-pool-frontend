@@ -3,6 +3,7 @@ import { Settings, User, Mail, Phone, School, Car } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { UserRole } from "../../types";
+import imageService from "../../services/imageService";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Profile = () => {
   if (!user) {
     return null;
   }
+  else  console.log(user)
 
   return (
     <Layout>
@@ -92,6 +94,37 @@ const Profile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Vehicle Documents - Only show for students */}
+{user.role === UserRole.DRIVER && user.vehicleDetails && user.vehicleDetails.length > 0 && (
+  <div className="space-y-4 border-t pt-4 mt-4">
+    <h3 className="text-lg font-medium text-gray-900 mb-4">
+      Documents
+    </h3>
+    <div className="grid grid-cols-2 gap-4">
+      {user.vehicleDetails[0].driverPhotoPath && (
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Driver Photo</p>
+          <img 
+            src={user.vehicleDetails[0].driverPhotoPath}
+            alt="Driver Photo"
+            className="w-full h-auto rounded-lg shadow"
+          />
+        </div>
+      )}
+      {user.vehicleDetails[0].licensePhotoPath && (
+        <div>
+          <p className="text-sm text-gray-500 mb-2">License Photo</p>
+          <img 
+            src={user.vehicleDetails[0].licensePhotoPath}
+            alt="License Photo"
+            className="w-full h-auto rounded-lg shadow"
+          />
+          </div>
+      )}
+    </div>
+  </div>
+)}
 
             {/* Vehicle Information - Only show for drivers */}
             {user.role === UserRole.DRIVER &&

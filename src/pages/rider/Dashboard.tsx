@@ -8,12 +8,15 @@ import {
   Edit2,
   Clock,
   Trash2,
+  Phone,
+  User,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { rideService, bookingService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ride, RideStatus, Booking, BookingStatus } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
+import Profile from "../profile/Profile";
 
 const RiderDashboard: React.FC = () => {
   const [rides, setRides] = useState<Ride[]>([]);
@@ -23,6 +26,7 @@ const RiderDashboard: React.FC = () => {
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     if (user?.phone) {
@@ -44,6 +48,29 @@ const RiderDashboard: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Add loading function for confirmed bookings
+  const loadConfirmedBookings = async () => {
+    try {
+      if (!user?.phone) return;
+      const bookings = await bookingService.getDriverBookings(user.phone);
+      const confirmed = bookings.filter(
+        (booking) => booking.status === BookingStatus.CONFIRMED
+      );
+      setConfirmedBookings(confirmed);
+    } catch (error) {
+      console.error("Error loading confirmed bookings:", error);
+    }
+  };
+
+  // Add to useEffect
+  useEffect(() => {
+    if (user?.phone) {
+      loadRides();
+      loadPendingBookings();
+      loadConfirmedBookings();
+    }
+  }, [user]);
 
   const loadPendingBookings = async () => {
     try {
@@ -94,6 +121,13 @@ const RiderDashboard: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-2 mt-16">
+        <div>
+          <center>
+            <h1 className="text-2xl items-center font-bold text-gray-900">
+              Hello {user?.firstName}
+            </h1>
+          </center>
+        </div>
         {/* Pending Bookings Section */}
         {!isLoadingBookings && pendingBookings.length > 0 && (
           <div className="mb-8">
@@ -162,7 +196,55 @@ const RiderDashboard: React.FC = () => {
             </div>
           </div>
         )}
-
+        
+        {/* <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Active Bookings
+          </h2>
+          <div className="grid gap-4">
+            {rides
+              .filter((ride) => ride.status === RideStatus.SCHEDULED)
+              .map((ride) => (
+                <div key={ride.id} className="bg-white rounded-lg shadow p-4">
+                  <div className="mb-4">
+                    <h3 className="font-medium">
+                      {ride.origin} → {ride.destination}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {formatDateTime(ride.departureTime)}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-700">
+                      Booked Passengers:
+                    </h4>
+                    {confirmedBookings
+                      .filter((booking) => booking.ride.id === ride.id)
+                      .map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="flex justify-between items-center bg-gray-50 p-3 rounded"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {booking.passenger.firstName}{" "}
+                              {booking.passenger.lastName}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Call: {booking.passenger.phone}
+                            </p>
+                            
+                          </div>
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                            Confirmed
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div> */}
         {/* Error Message */}
         {error ? (
           <div className="text-red-600 text-center py-8">
@@ -177,7 +259,7 @@ const RiderDashboard: React.FC = () => {
         ) : (
           <>
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">My Rides</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Scheduled Rides</h1>
               <button
                 onClick={() => navigate("/rides/new")}
                 className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
@@ -245,9 +327,38 @@ const RiderDashboard: React.FC = () => {
                         </div>
                         <div className="flex items-center text-gray-600">
                           <InformationCircleIcon className="mr-2 h-5 w-5" />
-                          Payments are received only through cash from the students.
+                          Payments are received only through cash from the
+                          students.
                         </div>
                       </div>
+                      <div className="space-y-3">
+                    <h4 className="font-medium text-gray-700">
+                      Booked Passengers:
+                    </h4>
+                    {confirmedBookings
+                      .filter((booking) => booking.ride.id === ride.id)
+                      .map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="flex justify-between items-center bg-gray-50 p-3 rounded"
+                        >
+                          <div>
+                            <p className="font-medium flex items-center">
+                            <User size={20} className="mr-1" />
+                              {booking.passenger.firstName}{" "}
+                              {booking.passenger.lastName}
+                            </p>
+                            <p className="text-sm text-gray-600 flex items-center">
+                            <Phone size={20} className="mr-1" />{booking.passenger.phone}
+                            </p>
+                            <span className="px-1 py-1 bg-green-100 text-green-800 rounded text-xs">
+                            Confirmed
+                          </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                
 
                       {ride.status === RideStatus.SCHEDULED && (
                         <div className="flex space-x-2">

@@ -16,12 +16,13 @@ import Dashboard from "./pages/rider/Dashboard";
 import ScheduleRide from "./pages/rides/ScheduleRide";
 import EditRide from "./pages/rides/EditRide";
 
-// Student Pages
-import UserDashboard from "./pages/user/Dashboard";
-
 // Common Pages
 import Profile from "./pages/profile/Profile";
 import Settings from "./pages/profile/Settings";
+// Student Pages
+import UserDashboard from "./pages/user/Dashboard";
+import UserHistory from "./pages/user/UserHistory";
+import RiderHistory from "./pages/rider/RiderHistory";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
                   <Routes>
                     <Route path="new" element={<ScheduleRide />} />
                     <Route path=":id/edit" element={<EditRide />} />
+                    <Route path="history" element={<RiderHistory />} />
                   </Routes>
                 </RouteGuard>
               </ProtectedRoute>
@@ -66,6 +68,7 @@ function App() {
                 <RouteGuard allowedRoles={[UserRole.STUDENT]}>
                   <Routes>
                     <Route path="dashboard" element={<UserDashboard />} />
+                    <Route path="history" element={<UserHistory />} />
                     {/* Add additional student routes here */}
                   </Routes>
                 </RouteGuard>
@@ -85,6 +88,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <UserHistory />
+              </ProtectedRoute>
+            }
+          /> */}
         </Routes>
       </Router>
     </AuthProvider>

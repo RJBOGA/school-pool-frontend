@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MapPin, Calendar, Clock, Users, DollarSign } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, DollarSign, BadgeDollarSign } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService } from "../../services";
@@ -223,7 +223,7 @@ const EditRide = () => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
+                  <BadgeDollarSign className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   {...register("price", { valueAsNumber: true })}

@@ -7,16 +7,14 @@ import { UserRole } from '../../types';
 import { userService } from '../../services';
 import Layout from '../layout/Layout';
 
-// Define the vehicle schema
 const vehicleSchema = z.object({
   make: z.string().min(1, 'Make is required'),
   model: z.string().min(1, 'Model is required'),
   licensePlate: z.string().min(1, 'License plate is required'),
   driversLicense: z.string().min(1, 'Driver\'s license is required')
-});
-
-// Define the form validation schema
-const registerSchema = z.object({
+ });
+ 
+ const registerSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
   lastName: z.string().min(2, 'Last name is required'),
   email: z.string().email('Invalid email'),
@@ -34,17 +32,19 @@ const registerSchema = z.object({
   vehicleDetails: z.array(vehicleSchema).optional(),
   rating: z.number().default(0),
   isDriverVerified: z.boolean().default(false)
-}).refine((data) => data.password === data.confirmPassword, {
+ }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
-});
+ });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+ type RegisterFormData = z.infer<typeof registerSchema>;
 
-const Register = () => {
+ const Register = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [driverPhoto, setDriverPhoto] = useState<File | null>(null);
+  const [licensePhoto, setLicensePhoto] = useState<File | null>(null);
+ 
   const {
     register,
     handleSubmit,
@@ -65,7 +65,9 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       const { confirmPassword, ...registerData } = data;
-      await userService.register(registerData);
+      console.log('Submit data:', registerData);
+      console.log('Files:', { driverPhoto, licensePhoto });
+      await userService.register(registerData, driverPhoto || undefined, licensePhoto || undefined);
       navigate('/');
     } catch (error) {
       console.error('Registration failed:', error);
@@ -216,12 +218,13 @@ const Register = () => {
 
             {/* Vehicle Details - Conditionally rendered */}
             {userRole === UserRole.DRIVER && (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Details</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Make</label>
+                   <div className="space-y-4 animate-fadeIn">
+                     <div className="border-t pt-4">
+                       <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Details</h3>
+                       <div className="space-y-4">
+                         {/* Make, Model, License Plate fields remain same */}
+                         <div>
+                      <label className="block text-sm font-medium text-gray-700">Manufacturing Company</label>
                       <input
                         {...register('vehicleDetails.0.make')}
                         placeholder="e.g., Toyota"
@@ -233,7 +236,6 @@ const Register = () => {
                         </p>
                       )}
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Model</label>
                       <input
@@ -261,7 +263,6 @@ const Register = () => {
                         </p>
                       )}
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Driver's License</label>
                       <input
@@ -275,10 +276,35 @@ const Register = () => {
                         </p>
                       )}
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                         
+                         {/* Add photo upload fields */}
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700">
+                             Driver Photo
+                           </label>
+                           <input
+                             type="file"
+                             accept="image/*"
+                             onChange={(e) => setDriverPhoto(e.target.files?.[0] || null)}
+                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                           />
+                         </div>
+
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700">
+                             License Photo
+                           </label>
+                           <input
+                             type="file"
+                             accept="image/*"
+                             onChange={(e) => setLicensePhoto(e.target.files?.[0] || null)}
+                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                           />
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
             <div>
               <button

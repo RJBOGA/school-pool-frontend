@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Calendar, DollarSign, MapPin, School } from "lucide-react";
+import { Search, Calendar, DollarSign, MapPin, School, Phone, BadgeDollarSign } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService, bookingService } from "../../services";
@@ -143,50 +143,15 @@ const UserDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 mt-16">
+      <div className="container mx-auto px-2 py-2 mt-8">
         {/* Search and Filters */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-wrap gap-4">
-            {/* Search Bar */}
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Search by location..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Date Filter */}
-            <div className="w-48">
-              <input
-                type="date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-              />
-            </div>
-
-            {/* Price Sort */}
-            <select
-              className="w-48 px-4 py-2 border border-gray-300 rounded-md"
-              value={priceSort}
-              onChange={(e) =>
-                setPriceSort(e.target.value as "asc" | "desc" | "")
-              }
-            >
-              <option value="">Sort by price</option>
-              <option value="asc">Price: Low to High</option>
-              <option value="desc">Price: High to Low</option>
-            </select>
-          </div>
+        
+        <div>
+          <center>
+            <h1 className="text-2xl items-center font-bold text-gray-900">
+              Hello {user?.firstName}
+            </h1>
+          </center>
         </div>
 
         {/* Rides List */}
@@ -236,7 +201,7 @@ const UserDashboard = () => {
                     Departure: {formatDateTime(ride.departureTime)}
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <DollarSign size={20} className="mr-2" />${ride.price}
+                    <BadgeDollarSign size={20} className="mr-2" />${ride.price}
                   </div>
                   <div className="flex items-center text-gray-600">
                     <InformationCircleIcon className="mr-2 h-5 w-5" />
@@ -259,14 +224,14 @@ const UserDashboard = () => {
       {/* Confirmed Rides Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Your Confirmed Rides
+          Upcoming Rides
         </h2>
         {isLoadingConfirmed ? (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           </div>
         ) : confirmedRides.length === 0 ? (
-          <div className="text-center py-4 bg-white rounded-lg shadow">
+          <div className="text-center py-8 bg-white rounded-lg shadow">
             <p className="text-gray-500">No confirmed rides.</p>
           </div>
         ) : (
@@ -280,8 +245,9 @@ const UserDashboard = () => {
                   <h3 className="text-lg font-semibold">
                     Ride with {booking.ride.driver.firstName}
                   </h3>
-                  <h3 className="text-lg font-semibold">
-                    Call: {booking.ride.driver.phone}
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <Phone size={20} className="mr-2" />
+                    {booking.ride.driver.phone}
                   </h3>
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                     Confirmed
@@ -297,7 +263,7 @@ const UserDashboard = () => {
                     {formatDateTime(booking.ride.departureTime)}
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <DollarSign size={20} className="mr-2" />$
+                    <BadgeDollarSign size={20} className="mr-2" />$
                     {booking.ride.price}
                   </div>
                   <div className="flex items-center text-gray-600">
@@ -312,7 +278,7 @@ const UserDashboard = () => {
         )}
       </div>
       {/*History*/}
-      <div className="mt-8">
+      {/* <div className="mt-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           Ride History
         </h2>
@@ -360,7 +326,7 @@ const UserDashboard = () => {
             ))}
           </div>
         )}
-      </div>
+      </div> */}
     </Layout>
   );
 };

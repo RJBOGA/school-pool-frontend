@@ -1,11 +1,13 @@
 import { UserRole, RideStatus, BookingStatus } from './enums';
 
 export interface Vehicle {
-    make: string;
-    model: string;
-    licensePlate: string;
-    driversLicense: string;
-  }
+  make: string;
+  model: string;
+  licensePlate: string;
+  driversLicense: string;
+  driverPhotoPath?: string;
+  licensePhotoPath?: string;
+}
   
   export interface User {
     phone: string;  // Using as ID
