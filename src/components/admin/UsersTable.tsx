@@ -1,8 +1,7 @@
 // src/components/admin/UsersTable.tsx
 import React, { useState } from 'react';
 import { User } from '../../types';
-import { Edit2, Trash2, CheckCircle, Eye, X, CheckCircle2 } from 'lucide-react';
-import { api } from '../../services';
+import { Edit2, Trash2, Eye, X, CheckCircle2 } from 'lucide-react';
 
 interface UsersTableProps {
   users: User[];

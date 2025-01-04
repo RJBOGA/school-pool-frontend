@@ -28,6 +28,7 @@ class AdminService {
     const response = await api.put(`${this.BASE_PATH}/drivers/${id}/verify`);
     return response.data;
   }
+
 }
 
 export default new AdminService();
