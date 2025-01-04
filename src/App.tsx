@@ -23,6 +23,11 @@ import Settings from "./pages/profile/Settings";
 import UserDashboard from "./pages/user/Dashboard";
 import UserHistory from "./pages/user/UserHistory";
 import RiderHistory from "./pages/rider/RiderHistory";
+import DriversManagement from "./components/admin/DriversManagement";
+import StudentsManagement from "./components/admin/StudentsManagement";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminLogin from "./components/admin/AdminLogin";
+import InfoPage from "./pages/InfoPage";
 
 function App() {
   return (
@@ -33,7 +38,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/info" element={<InfoPage />} />
           {/* Driver (Rider) Routes */}
           <Route
             path="/dashboard"
@@ -59,7 +64,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Student Routes */}
           <Route
             path="/user/*"
@@ -75,15 +79,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Common Protected Routes */}
           <Route
-            path="/profile"
+            path="/profile/*"
             element={
               <ProtectedRoute>
                 <Routes>
                   <Route index element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
+                  <Route path="edit" element={<Settings />} />
                 </Routes>
               </ProtectedRoute>
             }
@@ -96,6 +99,45 @@ function App() {
               </ProtectedRoute>
             }
           /> */}
+          // In App.tsx, add these routes within your Routes component
+          <Route
+            path="/admin/*"
+            element={
+              <Routes>
+                <Route path="login" element={<AdminLogin />} />
+                <Route
+                  path="dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <RouteGuard allowedRoles={[UserRole.ADMIN]}>
+                        <AdminDashboard />
+                      </RouteGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="students"
+                  element={
+                    <ProtectedRoute>
+                      <RouteGuard allowedRoles={[UserRole.ADMIN]}>
+                        <StudentsManagement />
+                      </RouteGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="drivers"
+                  element={
+                    <ProtectedRoute>
+                      <RouteGuard allowedRoles={[UserRole.ADMIN]}>
+                        <DriversManagement />
+                      </RouteGuard>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            }
+          />
         </Routes>
       </Router>
     </AuthProvider>

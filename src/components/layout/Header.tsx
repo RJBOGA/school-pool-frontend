@@ -33,19 +33,19 @@ const Header: React.FC = () => {
             {!user ? (
               <>
                 <Link
-                  to="/about"
+                  to="/info#about"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   About
                 </Link>
                 <Link
-                  to="/how-it-works"
+                  to="/info#how-it-works"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   How It Works
                 </Link>
                 <Link
-                  to="/contact"
+                  to="/info#contact"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   Contact
@@ -68,19 +68,19 @@ const Header: React.FC = () => {
             ) : (
               <>
                 <Link
-                  to="/about"
+                  to="/info#about"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   About
                 </Link>
                 <Link
-                  to="/how-it-works"
+                  to="/info#how-it-works"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   How It Works
                 </Link>
                 <Link
-                  to="/contact"
+                  to="/info#contact"
                   className="text-gray-600 hover:text-primary-600"
                 >
                   Contact
@@ -143,21 +143,21 @@ const Header: React.FC = () => {
               {!user ? (
                 <>
                   <Link
-                    to="/about"
+                    to="/info#about"
                     className="text-gray-600 hover:text-primary-600"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     About
                   </Link>
                   <Link
-                    to="/how-it-works"
+                    to="/info#how-it-works"
                     className="text-gray-600 hover:text-primary-600"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     How It Works
                   </Link>
                   <Link
-                    to="/contact"
+                    to="/info#contact"
                     className="text-gray-600 hover:text-primary-600"
                     onClick={() => setIsMenuOpen(false)}
                   >

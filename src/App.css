@@ -43,3 +43,8 @@
 .read-the-docs {
   color: #888;
 }
+
+.prose ul {
+  list-style: disc; /* Or 'circle', 'square', etc. */
+  margin-left: 20px; /* Adjust as needed */
+}

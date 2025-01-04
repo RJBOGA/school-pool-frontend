@@ -85,3 +85,8 @@ button:focus-visible {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
+
+.prose ul {
+  list-style: disc; /* Or 'circle', 'square', etc. */
+  margin-left: 20px; /* Adjust as needed */
+}

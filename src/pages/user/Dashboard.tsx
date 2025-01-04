@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Search, Calendar, DollarSign, MapPin, School, Phone, BadgeDollarSign } from "lucide-react";
+import {
+  Search,
+  Calendar,
+  DollarSign,
+  MapPin,
+  School,
+  Phone,
+  BadgeDollarSign,
+  Verified,
+} from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService, bookingService } from "../../services";
@@ -145,7 +154,7 @@ const UserDashboard = () => {
     <Layout>
       <div className="container mx-auto px-2 py-2 mt-8">
         {/* Search and Filters */}
-        
+
         <div>
           <center>
             <h1 className="text-2xl items-center font-bold text-gray-900">
@@ -177,8 +186,9 @@ const UserDashboard = () => {
             filteredRides.map((ride) => (
               <div key={ride.id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-lg font-semibold flex items-center">
                     {ride.driver.firstName} {ride.driver.lastName}
+                    <Verified size={20} className="ml-2 text-green-500" />
                   </h3>
                   <div className="flex items-center">
                     <span className="mr-2">

@@ -31,16 +31,16 @@ const Footer: React.FC = () => {
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/about" className="text-gray-600 hover:text-primary-600">About Us</Link>
+                <Link to="/info#about" className="text-gray-600 hover:text-primary-600">About Us</Link>
               </li>
               <li>
-                <Link to="/how-it-works" className="text-gray-600 hover:text-primary-600">How It Works</Link>
+                <Link to="/info#how-it-works" className="text-gray-600 hover:text-primary-600">How It Works</Link>
               </li>
               <li>
-                <Link to="/safety" className="text-gray-600 hover:text-primary-600">Safety</Link>
+                <Link to="/info#safety" className="text-gray-600 hover:text-primary-600">Safety</Link>
               </li>
               <li>
-                <Link to="/universities" className="text-gray-600 hover:text-primary-600">Universities</Link>
+                <Link to="/info#universities" className="text-gray-600 hover:text-primary-600">Universities</Link>
               </li>
             </ul>
           </div>
@@ -50,16 +50,16 @@ const Footer: React.FC = () => {
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/help" className="text-gray-600 hover:text-primary-600">Help Center</Link>
+                <Link to="/info#help" className="text-gray-600 hover:text-primary-600">Help Center</Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-600 hover:text-primary-600">Contact Us</Link>
+                <Link to="/info#privacy" className="text-gray-600 hover:text-primary-600">Privacy Policy</Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-600 hover:text-primary-600">Privacy Policy</Link>
+                <Link to="/info#terms" className="text-gray-600 hover:text-primary-600">Terms of Service</Link>
               </li>
               <li>
-                <Link to="/terms" className="text-gray-600 hover:text-primary-600">Terms of Service</Link>
+                <Link to="/admin/login" className="text-gray-600 hover:text-primary-600">Admin Login</Link>
               </li>
             </ul>
           </div>
