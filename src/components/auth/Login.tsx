@@ -33,11 +33,10 @@ const Login = () => {
     try {
       setIsSubmitting(true);
       setError('');
-  
-      //const response = await userService.login(data);
-      const user = await userService.getUserById(data.phone);
+
+      const user = await userService.userLogin(data);
       
-      if (user.password === data.password) {
+      if (user) {
         login(user); // Store user in auth context
         console.log(user)
         

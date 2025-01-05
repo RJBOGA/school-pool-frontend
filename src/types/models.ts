@@ -1,5 +1,10 @@
 import { UserRole, RideStatus, BookingStatus } from './enums';
 
+export interface LoginRequest {
+  phone: string;
+  password: string;
+}
+
 export interface Vehicle {
   make: string;
   model: string;

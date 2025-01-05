@@ -1,33 +1,21 @@
 import api from './api';
-import { User, RegisterRequest, ApiResponse, LoginRequest, LoginResponse, UserRole } from '../types';
+import { User, RegisterRequest, ApiResponse, LoginRequest, UserRole } from '../types';
 
 class UserService {
   private readonly BASE_PATH = '/users';
 
   // Add login method
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
+  async userLogin(credentials: LoginRequest): Promise<User> {
     try {
-      const response = await api.post<LoginResponse>(`${this.BASE_PATH}/login`, credentials);
-      return response.data;
+      const response = await api.post<User>(`${this.BASE_PATH}/login`, credentials);
+      console.log(response.data)
+      const user = response.data;
+      return user;
     } catch (error: any) {
-      // Handle different types of errors
-      if (error.response?.status === 401) {
-        return {
-          success: false,
-          message: 'Invalid credentials'
-        };
-      }
-      return {
-        success: false,
-        message: 'An error occurred during login'
-      };
+      console.error('API Error:', error.response?.data || error.message);
+      throw error;
     }
   }
-
-  // async register(userData: RegisterRequest): Promise<ApiResponse<User>> {
-  //   const response = await api.post<ApiResponse<User>>(`${this.BASE_PATH}/register`, userData);
-  //   return response.data;
-  // }
 
   async register(userData: RegisterRequest, driverPhoto?: File, licensePhoto?: File): Promise<ApiResponse<User>> {
     try {
@@ -58,11 +46,6 @@ class UserService {
       throw error;
     }
   }
-
-  // async getUserById(id: string): Promise<User> {
-  //   const response = await api.get<User>(`${this.BASE_PATH}/${id}`);
-  //   return response.data;
-  // }
 
   async getUserById(id: string): Promise<User> {
     try {
