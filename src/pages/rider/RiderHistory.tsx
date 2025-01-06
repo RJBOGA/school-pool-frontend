@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { Calendar, DollarSign, MapPin, Users } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
-import { Booking } from "../../types/models";
-import bookingService from "../../services/bookingService";
+import { Ride, RideStatus } from "../../types/models";
+import { rideService } from "../../services";
 
 const RiderHistory = () => {
   const { user } = useAuth();
-  const [completedRides, setCompletedRides] = useState<Booking[]>([]);
+  const [pastRides, setPastRides] = useState<Ride[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -19,13 +19,20 @@ const RiderHistory = () => {
   const loadDriverRides = async () => {
     try {
       setIsLoading(true);
-      const driverBookings = await bookingService.getDriverBookings(user!.phone);
+      const userRides = await rideService.getUserRides(user!.phone);
       
-      const completed = driverBookings.filter(booking => 
-        new Date(booking.ride.departureTime) < new Date()
+      // Filter rides that are either completed or cancelled
+      const past = userRides.filter(ride => 
+        ride.status === RideStatus.COMPLETED || 
+        ride.status === RideStatus.CANCELLED
       );
       
-      setCompletedRides(completed);
+      // Sort by departure time (most recent first)
+      past.sort((a, b) => 
+        new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime()
+      );
+      
+      setPastRides(past);
     } catch (error) {
       console.error("Error loading driver rides:", error);
     } finally {
@@ -47,49 +54,45 @@ const RiderHistory = () => {
           <div className="text-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
           </div>
-        ) : completedRides.length === 0 ? (
+        ) : pastRides.length === 0 ? (
           <div className="text-center py-4 bg-white rounded-lg shadow">
             <p className="text-gray-500">No ride history.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {completedRides.map((booking) => (
+            {pastRides.map((ride) => (
               <div
-                key={booking.id}
+                key={ride.id}
                 className="bg-white rounded-lg shadow p-6 opacity-75"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-semibold mb-1">
-                      {booking.ride.origin} → {booking.ride.destination}
+                      {ride.origin} → {ride.destination}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      Passenger: {booking.passenger.firstName} {booking.passenger.lastName}
-                    </p>
                   </div>
                   <div className="text-right">
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                      {booking.status}
+                    <span className={`px-2 py-1 rounded-full text-sm ${
+                      ride.status === RideStatus.COMPLETED 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-red-100 text-red-800"
+                    }`}>
+                      {ride.status}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center text-gray-600">
                     <Calendar size={20} className="mr-2" />
-                    {formatDateTime(booking.ride.departureTime)}
+                    {formatDateTime(ride.departureTime)}
                   </div>
                   <div className="flex items-center text-gray-600">
                     <DollarSign size={20} className="mr-2" />
-                    ${booking.ride.price}
+                    ${ride.price}
                   </div>
                   <div className="flex items-center text-gray-600">
                     <Users size={20} className="mr-2" />
-                    Total Seats: {booking.ride.totalSeats}
-                  </div>
-                  <div className="mt-2 pt-2 border-t">
-                    <p className="text-sm text-gray-500">
-                      Contact: {booking.passenger.phone}
-                    </p>
+                    Seats Offered: {ride.totalSeats}
                   </div>
                 </div>
               </div>

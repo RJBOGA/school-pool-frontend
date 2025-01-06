@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  Search,
   Calendar,
-  DollarSign,
   MapPin,
   School,
   Phone,
@@ -20,21 +18,38 @@ const UserDashboard = () => {
   const [rides, setRides] = useState<Ride[]>([]);
   const [filteredRides, setFilteredRides] = useState<Ride[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [priceSort, setPriceSort] = useState<"asc" | "desc" | "">("");
+  const [searchTerm] = useState("");
+  const [dateFilter] = useState("");
+  const [priceSort] = useState<"asc" | "desc" | "">("");
   const [confirmedRides, setConfirmedRides] = useState<Booking[]>([]);
   const [rideHistory, setRideHistory] = useState<Booking[]>([]);
   const [isLoadingConfirmed, setIsLoadingConfirmed] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
+  const [pendingRides, setPendingRides] = useState<Booking[]>([]);
+
   useEffect(() => {
     if (user?.phone) {
       console.log("User loaded, fetching rides:", user.phone);
-      loadRides();
       loadUserRides();
+      loadRides();
     }
   }, []);
+
+  const handleCancelRide = async (bookingId: string) => {
+    try {
+      await bookingService.updateBookingStatus(
+        bookingId,
+        BookingStatus.CANCELLED
+      );
+      alert("Ride request cancelled successfully!");
+      // Reload rides to update the UI
+      loadUserRides();
+    } catch (error) {
+      console.error("Error cancelling ride:", error);
+      alert("Failed to cancel ride request. Please try again.");
+    }
+  };
 
   const loadUserRides = async () => {
     try {
@@ -64,11 +79,15 @@ const UserDashboard = () => {
           new Date(booking.ride.departureTime) < new Date()
       );
 
-      console.log("Confirmed rides:", confirmed);
-      console.log("History:", history);
+      const pendingRides = userBookings.filter(
+        (booking) =>
+          booking.status === BookingStatus.PENDING &&
+          new Date(booking.ride.departureTime) > new Date()
+      );
 
       setConfirmedRides(confirmed);
       setRideHistory(history);
+      setPendingRides(pendingRides);
     } catch (error) {
       console.error("Error loading user rides:", error);
     } finally {
@@ -94,35 +113,6 @@ const UserDashboard = () => {
   useEffect(() => {
     let result = [...rides];
 
-    // Search filter
-    if (searchTerm) {
-      result = result.filter(
-        (ride) =>
-          ride.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ride.destination.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Date filter
-    if (dateFilter) {
-      result = result.filter((ride) => {
-        const rideDate = new Date(ride.departureTime).toLocaleDateString();
-        const filterDate = new Date(dateFilter).toLocaleDateString();
-        return rideDate === filterDate;
-      });
-    }
-
-    // Price sort
-    if (priceSort) {
-      result.sort((a, b) => {
-        if (priceSort === "asc") {
-          return a.price - b.price;
-        } else {
-          return b.price - a.price;
-        }
-      });
-    }
-
     setFilteredRides(result);
   }, [searchTerm, dateFilter, priceSort, rides]);
 
@@ -140,6 +130,7 @@ const UserDashboard = () => {
       await bookingService.createBooking(bookingData);
       // Show success message or notification
       alert("Ride request sent successfully!");
+      loadUserRides();
     } catch (error) {
       console.error("Error requesting ride:", error);
       alert("Failed to request ride. Please try again.");
@@ -183,51 +174,98 @@ const UserDashboard = () => {
               </p>
             </div>
           ) : (
-            filteredRides.map((ride) => (
-              <div key={ride.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold flex items-center">
-                    {ride.driver.firstName} {ride.driver.lastName}
-                    <Verified size={20} className="ml-2 text-green-500" />
-                  </h3>
-                  <div className="flex items-center">
-                    <span className="mr-2">
-                      {ride.availableSeats} Seats Available
-                    </span>
+            filteredRides.sort((a, b) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime()) // Sort descending
+              .filter(
+                (ride) =>
+                  !confirmedRides.some(
+                    (confirmedRide) => confirmedRide.ride.id === ride.id
+                  )
+              )
+              .map((ride) => (
+                <div key={ride.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      {ride.driver.firstName} {ride.driver.lastName}
+                      <Verified size={20} className="ml-2 text-green-500" />
+                    </h3>
+                    <div className="flex items-center">
+                      <span className="mr-2">
+                        {ride.availableSeats} Seats Available
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-gray-600">
-                    <MapPin size={20} className="mr-2" />
-                    {ride.origin} → {ride.destination}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-gray-600">
+                      <MapPin size={20} className="mr-2" />
+                      {ride.origin} → {ride.destination}
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <School size={20} className="mr-2" />
+                      {ride.driver.university}
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Calendar size={20} className="mr-2" />
+                      Departure: {formatDateTime(ride.departureTime)}
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <BadgeDollarSign size={20} className="mr-2" />$
+                      {ride.price}
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <InformationCircleIcon className="mr-2 h-5 w-5" />
+                      Due to our policy payments are accepted only through cash
+                      to the rider.
+                    </div>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <School size={20} className="mr-2" />
-                    {ride.driver.university}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Calendar size={20} className="mr-2" />
-                    Departure: {formatDateTime(ride.departureTime)}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <BadgeDollarSign size={20} className="mr-2" />${ride.price}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <InformationCircleIcon className="mr-2 h-5 w-5" />
-                    Due to our policy payments are accepted only through cash to
-                    the rider.
-                  </div>
-                </div>
 
-                <button
-                  onClick={() => handleRequestRide(ride)}
-                  className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors"
-                >
-                  Request Ride
-                </button>
-              </div>
-            ))
+                  {pendingRides.some(
+                    (pendingBooking) => pendingBooking.ride.id === ride.id
+                  ) ? (
+                    // Show Cancel button for pending rides
+                    <button
+                      onClick={() => {
+                        const pendingBooking = pendingRides.find(
+                          (booking) => booking.ride.id === ride.id
+                        );
+                        if (pendingBooking) {
+                          handleCancelRide(pendingBooking.id);
+                          loadRides();
+                        }
+                      }}
+                      className="w-full py-2 px-4 rounded-md transition-colors bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      Cancel Request
+                    </button>
+                  ) : (
+                    // Show Request button for non-pending rides
+                    <button
+                      onClick={() => handleRequestRide(ride)}
+                      disabled={(() => {
+                        const isDisabled = pendingRides.some(
+                          (pendingBooking) => {
+                            return pendingBooking.ride.id === ride.id;
+                          }
+                        );
+                        return isDisabled;
+                      })()}
+                      className={`w-full py-2 px-4 rounded-md transition-colors ${
+                        pendingRides.some(
+                          (pendingBooking) => pendingBooking.ride.id === ride.id
+                        )
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-primary-600 hover:bg-primary-700 text-white"
+                      }`}
+                    >
+                      {pendingRides.some(
+                        (pendingBooking) => pendingBooking.ride.id === ride.id
+                      )
+                        ? "Ride Request Pending"
+                        : "Request Ride"}
+                    </button>
+                  )}
+                </div>
+              ))
           )}
         </div>
       </div>
@@ -287,56 +325,6 @@ const UserDashboard = () => {
           </div>
         )}
       </div>
-      {/*History*/}
-      {/* <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Ride History
-        </h2>
-        {isLoadingHistory ? (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-          </div>
-        ) : rideHistory.length === 0 ? (
-          <div className="text-center py-4 bg-white rounded-lg shadow">
-            <p className="text-gray-500">No ride history.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {rideHistory.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-white rounded-lg shadow p-6 opacity-75"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold">
-                    Ride with {booking.ride.driver.firstName}
-                  </h3>
-                  <h3 className="text-lg font-semibold">
-                    Call: {booking.ride.driver.phone}
-                  </h3>
-                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                    {booking.status}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center text-gray-600">
-                    <MapPin size={20} className="mr-2" />
-                    {booking.ride.origin} → {booking.ride.destination}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Calendar size={20} className="mr-2" />
-                    {formatDateTime(booking.ride.departureTime)}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <DollarSign size={20} className="mr-2" />$
-                    {booking.ride.price}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div> */}
     </Layout>
   );
 };

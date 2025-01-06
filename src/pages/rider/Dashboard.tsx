@@ -39,6 +39,7 @@ const RiderDashboard: React.FC = () => {
       setIsLoading(true);
       setError("");
       const userRides = await rideService.getUserRides(user!.phone);
+      console.log(userRides)
       setRides(userRides);
     } catch (error) {
       console.error("Error loading rides:", error);
@@ -110,6 +111,22 @@ const RiderDashboard: React.FC = () => {
       } catch (error) {
         console.error("Error deleting ride:", error);
       }
+    }
+  };
+
+  const canStartRide = (departureTime: string): boolean => {
+    const fifteenMinutesBefore = new Date(departureTime);
+    fifteenMinutesBefore.setMinutes(fifteenMinutesBefore.getMinutes() - 15);
+    return new Date() >= fifteenMinutesBefore;
+  };
+
+  const handleUpdateRideStatus = async (rideId: string, status: RideStatus) => {
+    try {
+      await rideService.updateRideStatus(rideId, status);
+      loadRides(); // Refresh the rides list
+    } catch (error) {
+      console.error("Error updating ride status:", error);
+      alert("Failed to update ride status");
     }
   };
 
@@ -251,7 +268,11 @@ const RiderDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="grid gap-6">
-                {rides.map((ride) => (
+                {rides.sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()) // Sort ascending
+                      .filter(
+                        (ride) =>
+                          ride.status !== RideStatus.COMPLETED // Add this condition
+                      ).map((ride) => (
                   <div
                     key={ride.id}
                     className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
@@ -326,6 +347,34 @@ const RiderDashboard: React.FC = () => {
                           ))}
                       </div>
 
+                      {/* {ride.status === RideStatus.SCHEDULED &&
+                        canStartRide(ride.departureTime) && (
+                          <button
+                            onClick={() =>
+                              handleUpdateRideStatus(
+                                ride.id,
+                                RideStatus.IN_PROGRESS
+                              )
+                            }
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                          >
+                            Start Ride
+                          </button>
+                        )}
+                      {ride.status === RideStatus.IN_PROGRESS && (
+                        <button
+                          onClick={() =>
+                            handleUpdateRideStatus(
+                              ride.id,
+                              RideStatus.COMPLETED
+                            )
+                          }
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          End Ride
+                        </button>
+                      )}
+
                       {ride.status === RideStatus.SCHEDULED && (
                         <div className="flex space-x-2">
                           <button
@@ -343,6 +392,52 @@ const RiderDashboard: React.FC = () => {
                             <Trash2 size={20} />
                           </button>
                         </div>
+                      )} */}
+                      {ride.status === RideStatus.SCHEDULED && (
+                        <div className="flex space-x-2">
+                          {canStartRide(ride.departureTime) && (
+                            <button
+                              onClick={() =>
+                                handleUpdateRideStatus(
+                                  ride.id,
+                                  RideStatus.IN_PROGRESS
+                                )
+                              }
+                              className="p-2 text-white bg-green-600 rounded-md hover:bg-green-700"
+                              title="Start ride"
+                            >
+                              Start Ride
+                            </button>
+                          )}
+                          <button
+                            onClick={() => navigate(`/rides/${ride.id}/edit`)}
+                            className="p-2 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
+                            title="Edit ride"
+                          >
+                            <Edit2 size={20} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRide(ride.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
+                            title="Cancel ride"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      )}
+                      {ride.status === RideStatus.IN_PROGRESS && (
+                        <button
+                          onClick={() =>
+                            handleUpdateRideStatus(
+                              ride.id,
+                              RideStatus.COMPLETED
+                            )
+                          }
+                          className="p-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                          title="End ride"
+                        >
+                          End Ride
+                        </button>
                       )}
                     </div>
                   </div>

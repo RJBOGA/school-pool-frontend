@@ -39,12 +39,11 @@ class BookingService {
   }
 
   async updateBookingStatus(id: string, status: string): Promise<Booking> {
-    const response = await api.patch<Booking>(
-      `${this.BASE_PATH}/${id}/status`,
-      { status }
+    const response = await api.put<Booking>(
+      `${this.BASE_PATH}/${id}/status?status=${status}`,  // Note: Changed to query parameter
     );
     return response.data;
-  }
+}
 
   async cancelBooking(id: string): Promise<void> {
     await api.delete(`${this.BASE_PATH}/${id}`);

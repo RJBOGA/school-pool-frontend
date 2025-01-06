@@ -1,5 +1,5 @@
 import api from './api';
-import { Ride, ApiResponse } from '../types';
+import { Ride, ApiResponse, RideStatus } from '../types';
 
 class RideService {
   private readonly BASE_PATH = '/rides';
@@ -48,6 +48,18 @@ class RideService {
       return response.data;
     } catch (error) {
       console.error('Error fetching available rides:', error);
+      throw error;
+    }
+  }
+
+  async updateRideStatus(id: string, status: RideStatus): Promise<Ride> {
+    try {
+      const response = await api.put<Ride>(`${this.BASE_PATH}/${id}/status`, null, {
+        params: { status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating ride status:', error);
       throw error;
     }
   }

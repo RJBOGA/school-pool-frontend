@@ -176,7 +176,7 @@ const ScheduleRide = () => {
                  {...register("departureTime")}
                  type="datetime-local"
                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                 min={new Date().toISOString().slice(0, 16)}
+                 
                />
              </div>
              {errors.departureTime && <p className="mt-1 text-sm text-red-600">{errors.departureTime.message}</p>}

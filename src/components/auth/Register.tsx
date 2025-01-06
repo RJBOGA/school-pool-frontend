@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,10 +65,9 @@ const vehicleSchema = z.object({
     try {
       setIsSubmitting(true);
       const { confirmPassword, ...registerData } = data;
-      console.log('Submit data:', registerData);
-      console.log('Files:', { driverPhoto, licensePhoto });
       await userService.register(registerData, driverPhoto || undefined, licensePhoto || undefined);
-      navigate('/');
+      navigate('/login');
+      console.log('User Registration Successful');
     } catch (error) {
       console.error('Registration failed:', error);
     } finally {
@@ -78,7 +77,7 @@ const vehicleSchema = z.object({
 
   return (
     <Layout>
-      <div className="max-w mx-auto pt-2 pb-2 px-4 sm:px-6 lg:px-0"> {/* Added pt-20 for header space */}
+      <div className="max-w mx-auto pt-2 pb-2 px-4 sm:px-6 lg:px-0">
         <div className="text-center">
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
