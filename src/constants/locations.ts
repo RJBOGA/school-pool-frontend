@@ -18,5 +18,6 @@ export const LOCATIONS = {
     Skylar: "Skylar Ridge Apartments",
     Warrensburg: "University of Central Missouri - Warrensburg",
     UMKC: "University of Missouri - Kansas City",
-    VillageLionsgate: "Village at Lionsgate"
+    VillageLionsgate: "Village at Lionsgate",
+    Airport: "Kansas City International Airport"
   } as const;

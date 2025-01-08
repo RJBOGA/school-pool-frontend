@@ -42,6 +42,29 @@ const EditRide = () => {
     resolver: zodResolver(editRideSchema),
   });
 
+  
+   const getNowAsLocalISOString = () => {
+    const now = new Date();
+    // Convert to local timezone and reset seconds/milliseconds
+    now.setSeconds(0, 0); 
+    // Format the time for datetime-local input
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${date}T${hours}:${minutes}`;
+  };
+  
+  const [minTime, setMinTime] = useState(getNowAsLocalISOString());
+  
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setMinTime(getNowAsLocalISOString());
+    }, 60000); // Update every minute
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Load existing ride data
   useEffect(() => {
     const loadRide = async () => {
@@ -50,14 +73,16 @@ const EditRide = () => {
         const ride = await rideService.getRideById(id);
 
         // Format the date for the datetime-local input
-        const formattedDate = new Date(ride.departureTime)
-          .toISOString()
-          .slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+        const localTime = new Date(ride.departureTime);
+    const tzOffset = localTime.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const localTimeISOString = new Date(localTime.getTime() - tzOffset)
+      .toISOString()
+      .slice(0, 16); // Format: YYYY-MM-DDTHH:mm
 
         reset({
           origin: ride.origin,
           destination: ride.destination,
-          departureTime: formattedDate,
+          departureTime: localTimeISOString,
           totalSeats: ride.totalSeats,
           price: ride.price,
         });
@@ -79,11 +104,15 @@ const EditRide = () => {
       setIsSubmitting(true);
       setError("");
 
+      const localTime = new Date(data.departureTime);
+    const tzOffset = localTime.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const utcTime = new Date(localTime.getTime() + tzOffset).toISOString();
+
       // Only send fields that were changed
       const updatedFields: Partial<Ride> = {
         origin: data.origin,
         destination: data.destination,
-        departureTime: new Date(data.departureTime).toISOString(),
+        departureTime: utcTime,
         totalSeats: data.totalSeats,
         availableSeats: data.totalSeats, // Update available seats along with total seats
         price: data.price,
@@ -182,7 +211,7 @@ const EditRide = () => {
                   {...register("departureTime")}
                   type="datetime-local"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={minTime}
                 />
               </div>
               {errors.departureTime && (

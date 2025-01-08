@@ -9,6 +9,16 @@ const RiderHistory = () => {
   const { user } = useAuth();
   const [pastRides, setPastRides] = useState<Ride[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [today, setToday] = useState(new Date());
+
+  useEffect(() => {
+      const intervalId = setInterval(() => {
+        setToday(new Date());
+      }, 1000); // Update every second
+  
+      return () => clearInterval(intervalId);
+    }, []);
 
   useEffect(() => {
     if (user?.phone) {
@@ -24,7 +34,8 @@ const RiderHistory = () => {
       // Filter rides that are either completed or cancelled
       const past = userRides.filter(ride => 
         ride.status === RideStatus.COMPLETED || 
-        ride.status === RideStatus.CANCELLED
+        ride.status === RideStatus.CANCELLED ||
+        new Date(ride.departureTime).getTime() <= today.getTime()
       );
       
       // Sort by departure time (most recent first)

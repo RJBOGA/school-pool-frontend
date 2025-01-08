@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,28 @@ const ScheduleRide = () => {
  const [isDestinationDropdownOpen, setIsDestinationDropdownOpen] = useState(false);
  const [filteredOrigins, setFilteredOrigins] = useState<Array<[string, string]>>([]);
  const [filteredDestinations, setFilteredDestinations] = useState<Array<[string, string]>>([]);
+
+ const getNowAsLocalISOString = () => {
+  const now = new Date();
+  // Convert to local timezone and reset seconds/milliseconds
+  now.setSeconds(0, 0); 
+  // Format the time for datetime-local input
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const date = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${date}T${hours}:${minutes}`;
+};
+
+const [minTime, setMinTime] = useState(getNowAsLocalISOString());
+
+useEffect(() => {
+  const intervalId = setInterval(() => {
+    setMinTime(getNowAsLocalISOString());
+  }, 60000); // Update every minute
+  return () => clearInterval(intervalId);
+}, []);
 
  const {
    register,
@@ -176,11 +198,13 @@ const ScheduleRide = () => {
                  {...register("departureTime")}
                  type="datetime-local"
                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                 
+                 min={minTime}
                />
              </div>
              {errors.departureTime && <p className="mt-1 text-sm text-red-600">{errors.departureTime.message}</p>}
            </div>
+
+          {/* <p>Current Minimum Time: {minTime}</p> */}
 
            {/* Seats */}
            <div>

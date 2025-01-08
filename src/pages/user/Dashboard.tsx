@@ -233,7 +233,7 @@ const UserDashboard = () => {
                           loadRides();
                         }
                       }}
-                      className="w-full py-2 px-4 rounded-md transition-colors bg-red-600 hover:bg-red-700 text-white"
+                      className="w-auto py-2 px-4 rounded-md transition-colors bg-red-600 hover:bg-red-700 text-white"
                     >
                       Cancel Request
                     </button>
@@ -249,7 +249,7 @@ const UserDashboard = () => {
                         );
                         return isDisabled;
                       })()}
-                      className={`w-full py-2 px-4 rounded-md transition-colors ${
+                      className={`w-auto py-2 px-4 rounded-md transition-colors ${
                         pendingRides.some(
                           (pendingBooking) => pendingBooking.ride.id === ride.id
                         )

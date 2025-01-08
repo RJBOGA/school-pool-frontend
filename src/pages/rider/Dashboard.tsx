@@ -26,6 +26,8 @@ const RiderDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
+  const [today, setToday] = useState(new Date());
+  const hasNoFutureRides = rides.length === 0 || rides.every(ride => new Date(ride.departureTime).getTime() <= today.getTime());
 
   useEffect(() => {
     if (user?.phone) {
@@ -34,6 +36,14 @@ const RiderDashboard: React.FC = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setToday(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const loadRides = async () => {
     try {
       setIsLoading(true);
@@ -41,7 +51,7 @@ const RiderDashboard: React.FC = () => {
       const userRides = await rideService.getUserRides(user!.phone);
       console.log(userRides)
       setRides(userRides);
-    } catch (error) {
+      } catch (error) {
       console.error("Error loading rides:", error);
       setError("Failed to load rides. Please try again later.");
     } finally {
@@ -256,7 +266,7 @@ const RiderDashboard: React.FC = () => {
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
               </div>
-            ) : rides.length === 0 ? (
+            ) : hasNoFutureRides ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                 <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-medium text-gray-900 mb-2">
@@ -271,7 +281,7 @@ const RiderDashboard: React.FC = () => {
                 {rides.sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()) // Sort ascending
                       .filter(
                         (ride) =>
-                          ride.status !== RideStatus.COMPLETED // Add this condition
+                          ride.status !== RideStatus.COMPLETED && ride.status !== RideStatus.CANCELLED && new Date(ride.departureTime).getTime() > today.getTime()// Add this condition
                       ).map((ride) => (
                   <div
                     key={ride.id}
