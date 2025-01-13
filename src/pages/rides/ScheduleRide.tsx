@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MapPin, Clock, Users, DollarSign, Currency, BadgeDollarSign } from "lucide-react";
+import { MapPin, Clock, Users, BadgeDollarSign } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService } from "../../services";

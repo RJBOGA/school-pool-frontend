@@ -1,9 +1,10 @@
 // src/pages/InfoPage.tsx
-import React from "react";
+import { useScrollToHash } from "../components/hooks/useScrollToHash";
 import Layout from "../components/layout/Layout";
 import { Shield, Info, HelpCircle, School, Settings } from "lucide-react";
 
 const InfoPage = () => {
+  useScrollToHash();
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

@@ -108,6 +108,7 @@ const RiderDashboard: React.FC = () => {
       // Refresh both bookings and rides
       loadPendingBookings();
       loadRides();
+      loadConfirmedBookings();
     } catch (error) {
       console.error("Error updating booking:", error);
     }
@@ -357,52 +358,6 @@ const RiderDashboard: React.FC = () => {
                           ))}
                       </div>
 
-                      {/* {ride.status === RideStatus.SCHEDULED &&
-                        canStartRide(ride.departureTime) && (
-                          <button
-                            onClick={() =>
-                              handleUpdateRideStatus(
-                                ride.id,
-                                RideStatus.IN_PROGRESS
-                              )
-                            }
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                          >
-                            Start Ride
-                          </button>
-                        )}
-                      {ride.status === RideStatus.IN_PROGRESS && (
-                        <button
-                          onClick={() =>
-                            handleUpdateRideStatus(
-                              ride.id,
-                              RideStatus.COMPLETED
-                            )
-                          }
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                          End Ride
-                        </button>
-                      )}
-
-                      {ride.status === RideStatus.SCHEDULED && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => navigate(`/rides/${ride.id}/edit`)}
-                            className="p-2 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
-                            title="Edit ride"
-                          >
-                            <Edit2 size={20} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRide(ride.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
-                            title="Cancel ride"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        </div>
-                      )} */}
                       {ride.status === RideStatus.SCHEDULED && (
                         <div className="flex space-x-2">
                           {canStartRide(ride.departureTime) && (

@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MapPin, Calendar, Clock, Users, DollarSign, BadgeDollarSign } from "lucide-react";
+import { MapPin, Clock, Users, BadgeDollarSign } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService } from "../../services";
-import { Ride, RideStatus } from "../../types";
+import { Ride } from "../../types";
 
 const editRideSchema = z.object({
   origin: z.string().min(1, "Starting location is required"),

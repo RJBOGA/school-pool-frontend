@@ -53,10 +53,10 @@ const Footer: React.FC = () => {
                 <Link to="/info#help" className="text-gray-600 hover:text-primary-600">Help Center</Link>
               </li>
               <li>
-                <Link to="/info#privacy" className="text-gray-600 hover:text-primary-600">Privacy Policy</Link>
+                <Link to="/info#legal" className="text-gray-600 hover:text-primary-600">Privacy Policy</Link>
               </li>
               <li>
-                <Link to="/info#terms" className="text-gray-600 hover:text-primary-600">Terms of Service</Link>
+                <Link to="/info#legal" className="text-gray-600 hover:text-primary-600">Terms of Service</Link>
               </li>
               <li>
                 <Link to="/admin/login" className="text-gray-600 hover:text-primary-600">Admin Login</Link>

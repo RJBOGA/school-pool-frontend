@@ -48,3 +48,8 @@
   list-style: disc; /* Or 'circle', 'square', etc. */
   margin-left: 20px; /* Adjust as needed */
 }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Adjust this value based on your header height */
+}

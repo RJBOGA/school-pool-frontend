@@ -23,7 +23,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage }) => {
       {/* Sidebar */}
       <div className="w-64 bg-gray-800">
         <div className="p-4">
-          <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
+        <span className="text-3xl font-bold text-red-500">UCM</span>
+              <span className="text-3xl font-bold text-primary-500 ml-2">
+                SchoolPool
+              </span><br></br>
+              <span className="text-xl font-bold text-white ml-2">
+                Admin Dashboard
+              </span>
+          {/* <h1 className="text-xl font-bold text-white">Admin Dashboard</h1> */}
         </div>
         <nav className="mt-8">
           <div className="px-2 space-y-1">
@@ -31,8 +38,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage }) => {
               onClick={() => navigate('/admin/dashboard')}
               className={`w-full flex items-center px-4 py-2 text-sm rounded-md ${
                 currentPage === 'dashboard' 
-                  ? 'bg-gray-900 text-white' 
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-gray-900 text-primary-500' 
+                  : 'text-primary-500 hover:bg-gray-700 hover:text-white'
               }`}
             >
               <Users className="mr-3 h-5 w-5" />
@@ -42,8 +49,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage }) => {
               onClick={() => navigate('/admin/students')}
               className={`w-full flex items-center px-4 py-2 text-sm rounded-md ${
                 currentPage === 'students' 
-                  ? 'bg-gray-900 text-white' 
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-gray-900 text-primary-500' 
+                  : 'text-primary-500 hover:bg-gray-700 hover:text-white'
               }`}
             >
               <Users className="mr-3 h-5 w-5" />
@@ -53,8 +60,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage }) => {
               onClick={() => navigate('/admin/drivers')}
               className={`w-full flex items-center px-4 py-2 text-sm rounded-md ${
                 currentPage === 'drivers' 
-                  ? 'bg-gray-900 text-white' 
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-gray-900 text-primary-500' 
+                  : 'text-primary-500 hover:bg-gray-700 hover:text-white'
               }`}
             >
               <UserCog className="mr-3 h-5 w-5" />
@@ -65,7 +72,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage }) => {
         <div className="absolute bottom-4 w-64 px-2">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
+            className="w-full flex items-center px-4 py-2 text-sm text-primary-500 hover:bg-gray-700 hover:text-white rounded-md"
           >
             <LogOut className="mr-3 h-5 w-5" />
             <span>Logout</span>

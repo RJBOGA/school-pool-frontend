@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calendar, DollarSign, MapPin, Users } from "lucide-react";
+import { Calendar, DollarSign, Users } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ride, RideStatus } from "../../types/models";
