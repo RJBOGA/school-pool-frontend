@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
-import { rideService, bookingService } from "../../services";
+import { rideService, bookingService, userService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ride, RideStatus, Booking, BookingStatus } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
@@ -24,15 +24,31 @@ const RiderDashboard: React.FC = () => {
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
   const [today, setToday] = useState(new Date());
   const hasNoFutureRides = rides.length === 0 || rides.every(ride => new Date(ride.departureTime).getTime() <= today.getTime());
+    
+    const checkVerificationStatus = async () => {
+      if (user?.phone) {
+        try {
+          const response = await userService.getUserById(user.phone);
+          if (response.isDriverVerified !== user.isDriverVerified) {
+            const updatedUser = { ...user, isDriverVerified: response.isDriverVerified };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+        } catch (error) {
+          console.error("Error checking verification status:", error);
+        }
+      }
+    };
 
   useEffect(() => {
     if (user?.phone) {
       loadRides();
       loadPendingBookings();
+      checkVerificationStatus();
     }
   }, [user]);
 
