@@ -40,10 +40,10 @@ class BookingService {
 
   async updateBookingStatus(id: string, status: string): Promise<Booking> {
     const response = await api.put<Booking>(
-      `${this.BASE_PATH}/${id}/status?status=${status}`,  // Note: Changed to query parameter
+      `${this.BASE_PATH}/${id}/status?status=${status}` // Note: Changed to query parameter
     );
     return response.data;
-}
+  }
 
   async cancelBooking(id: string): Promise<void> {
     await api.delete(`${this.BASE_PATH}/${id}`);
@@ -64,10 +64,24 @@ class BookingService {
 
   async getDriverBookings(driverPhone: string): Promise<Booking[]> {
     try {
-      const response = await api.get<Booking[]>(`${this.BASE_PATH}/driver/${driverPhone}/all`);
+      const response = await api.get<Booking[]>(
+        `${this.BASE_PATH}/driver/${driverPhone}/all`
+      );
       return response.data;
     } catch (error) {
-      console.error('Error fetching driver bookings:', error);
+      console.error("Error fetching driver bookings:", error);
+      throw error;
+    }
+  }
+
+  async getConfirmedBookingsForRide(rideId: string): Promise<Booking[]> {
+    try {
+      const response = await api.get<Booking[]>(
+        `${this.BASE_PATH}/ride/${rideId}/confirmed`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error getting confirmed bookings:", error);
       throw error;
     }
   }

@@ -27,22 +27,52 @@ const RiderDashboard: React.FC = () => {
   const { user, setUser } = useAuth();
   const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
   const [today, setToday] = useState(new Date());
-  const hasNoFutureRides = rides.length === 0 || rides.every(ride => new Date(ride.departureTime).getTime() <= today.getTime());
-    
-    const checkVerificationStatus = async () => {
-      if (user?.phone) {
-        try {
-          const response = await userService.getUserById(user.phone);
-          if (response.isDriverVerified !== user.isDriverVerified) {
-            const updatedUser = { ...user, isDriverVerified: response.isDriverVerified };
-            setUser(updatedUser);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-          }
-        } catch (error) {
-          console.error("Error checking verification status:", error);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const hasNoFutureRides =
+    rides.length === 0 ||
+    rides.every(
+      (ride) => new Date(ride.departureTime).getTime() <= today.getTime()
+    );
+
+  const checkVerificationStatus = async () => {
+    if (user?.phone) {
+      try {
+        const response = await userService.getUserById(user.phone);
+        if (response.isDriverVerified !== user.isDriverVerified) {
+          const updatedUser = {
+            ...user,
+            isDriverVerified: response.isDriverVerified,
+          };
+          setUser(updatedUser);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
         }
+      } catch (error) {
+        console.error("Error checking verification status:", error);
       }
-    };
+    }
+  };
+
+  const canDeleteRide = (departureTime: string): boolean => {
+    const departure = new Date(departureTime);
+    const hourBeforeDeparture = new Date(departure.getTime() - 60 * 60 * 1000);
+    return currentTime < hourBeforeDeparture;
+  };
+
+  const handleDeleteRide = async (ride: Ride) => {
+    if (!canDeleteRide(ride.departureTime)) {
+      alert("Rides can only be cancelled at least 1 hour before departure");
+      return;
+    }
+
+    if (window.confirm("Are you sure you want to cancel this ride?")) {
+      try {
+        await rideService.deleteRide(ride.id);
+        loadRides();
+      } catch (error) {
+        console.error("Error deleting ride:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (user?.phone) {
@@ -65,9 +95,9 @@ const RiderDashboard: React.FC = () => {
       setIsLoading(true);
       setError("");
       const userRides = await rideService.getUserRides(user!.phone);
-      console.log(userRides)
+      console.log(userRides);
       setRides(userRides);
-      } catch (error) {
+    } catch (error) {
       console.error("Error loading rides:", error);
       setError("Failed to load rides. Please try again later.");
     } finally {
@@ -130,16 +160,16 @@ const RiderDashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteRide = async (rideId: string) => {
-    if (window.confirm("Are you sure you want to cancel this ride?")) {
-      try {
-        await rideService.deleteRide(rideId);
-        loadRides();
-      } catch (error) {
-        console.error("Error deleting ride:", error);
-      }
-    }
-  };
+  // const handleDeleteRide = async (rideId: string) => {
+  //   if (window.confirm("Are you sure you want to cancel this ride?")) {
+  //     try {
+  //       await rideService.deleteRide(rideId);
+  //       loadRides();
+  //     } catch (error) {
+  //       console.error("Error deleting ride:", error);
+  //     }
+  //   }
+  // };
 
   const canStartRide = (departureTime: string): boolean => {
     const fifteenMinutesBefore = new Date(departureTime);
@@ -295,134 +325,155 @@ const RiderDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="grid gap-6">
-                {rides.sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()) // Sort ascending
-                      .filter(
-                        (ride) =>
-                          ride.status !== RideStatus.COMPLETED && ride.status !== RideStatus.CANCELLED && new Date(ride.departureTime).getTime() > today.getTime()// Add this condition
-                      ).map((ride) => (
-                  <div
-                    key={ride.id}
-                    className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center text-gray-600">
-                            <Clock size={20} className="mr-2" />
-                            {formatDateTime(ride.departureTime)}
-                          </div>
-                          <span
-                            className={`px-2 py-1 rounded-full text-sm ${
-                              ride.status === RideStatus.SCHEDULED
-                                ? "bg-green-100 text-green-800"
-                                : ride.status === RideStatus.IN_PROGRESS
-                                ? "bg-blue-100 text-blue-800"
-                                : ride.status === RideStatus.COMPLETED
-                                ? "bg-gray-100 text-gray-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {ride.status}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center text-gray-600">
-                            <MapPin size={20} className="mr-2" />
-                            From: {ride.origin}
-                          </div>
-                          <div className="flex items-center text-gray-600">
-                            <MapPin size={20} className="mr-2" />
-                            To: {ride.destination}
-                          </div>
-                        </div>
-                        <div className="flex items-center text-gray-600">
-                          <Users size={20} className="mr-2" />
-                          {ride.availableSeats} seats available
-                        </div>
-                        <div className="flex items-center text-gray-600">
-                          <InformationCircleIcon className="mr-2 h-5 w-5" />
-                          Payments are received only through cash from the
-                          students.
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-gray-700">
-                          Booked Passengers:
-                        </h4>
-                        {confirmedBookings
-                          .filter((booking) => booking.ride.id === ride.id)
-                          .map((booking) => (
-                            <div
-                              key={booking.id}
-                              className="flex justify-between items-center bg-gray-50 p-3 rounded"
-                            >
-                              <div>
-                                <p className="font-medium flex items-center">
-                                  <User size={20} className="mr-1" />
-                                  {booking.passenger.firstName}{" "}
-                                  {booking.passenger.lastName}
-                                </p>
-                                <p className="text-sm text-gray-600 flex items-center">
-                                  <Phone size={20} className="mr-1" />
-                                  {booking.passenger.phone}
-                                </p>
-                                <span className="px-1 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                  Confirmed
-                                </span>
-                              </div>
+                {rides
+                  .sort(
+                    (a, b) =>
+                      new Date(a.departureTime).getTime() -
+                      new Date(b.departureTime).getTime()
+                  ) // Sort ascending
+                  .filter(
+                    (ride) =>
+                      ride.status !== RideStatus.COMPLETED &&
+                      ride.status !== RideStatus.CANCELLED &&
+                      new Date(ride.departureTime).getTime() > today.getTime() // Add this condition
+                  )
+                  .map((ride) => (
+                    <div
+                      key={ride.id}
+                      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center text-gray-600">
+                              <Clock size={20} className="mr-2" />
+                              {formatDateTime(ride.departureTime)}
                             </div>
-                          ))}
-                      </div>
-
-                      {ride.status === RideStatus.SCHEDULED && (
-                        <div className="flex space-x-2">
-                          {canStartRide(ride.departureTime) && (
-                            <button
-                              onClick={() =>
-                                handleUpdateRideStatus(
-                                  ride.id,
-                                  RideStatus.IN_PROGRESS
-                                )
-                              }
-                              className="p-2 text-white bg-green-600 rounded-md hover:bg-green-700"
-                              title="Start ride"
+                            <span
+                              className={`px-2 py-1 rounded-full text-sm ${
+                                ride.status === RideStatus.SCHEDULED
+                                  ? "bg-green-100 text-green-800"
+                                  : ride.status === RideStatus.IN_PROGRESS
+                                  ? "bg-blue-100 text-blue-800"
+                                  : ride.status === RideStatus.COMPLETED
+                                  ? "bg-gray-100 text-gray-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
                             >
-                              Start Ride
-                            </button>
-                          )}
-                          <button
-                            onClick={() => navigate(`/rides/${ride.id}/edit`)}
-                            className="p-2 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
-                            title="Edit ride"
-                          >
-                            <Edit2 size={20} />
-                          </button>
-                          <button
+                              {ride.status}
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center text-gray-600">
+                              <MapPin size={20} className="mr-2" />
+                              From: {ride.origin}
+                            </div>
+                            <div className="flex items-center text-gray-600">
+                              <MapPin size={20} className="mr-2" />
+                              To: {ride.destination}
+                            </div>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <Users size={20} className="mr-2" />
+                            {ride.availableSeats} seats available
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <InformationCircleIcon className="mr-2 h-5 w-5" />
+                            Payments are received only through cash from the
+                            students.
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-gray-700">
+                            Booked Passengers:
+                          </h4>
+                          {confirmedBookings
+                            .filter((booking) => booking.ride.id === ride.id)
+                            .map((booking) => (
+                              <div
+                                key={booking.id}
+                                className="flex justify-between items-center bg-gray-50 p-3 rounded"
+                              >
+                                <div>
+                                  <p className="font-medium flex items-center">
+                                    <User size={20} className="mr-1" />
+                                    {booking.passenger.firstName}{" "}
+                                    {booking.passenger.lastName}
+                                  </p>
+                                  <p className="text-sm text-gray-600 flex items-center">
+                                    <Phone size={20} className="mr-1" />
+                                    {booking.passenger.phone}
+                                  </p>
+                                  <span className="px-1 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                    Confirmed
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+
+                        {ride.status === RideStatus.SCHEDULED && (
+                          <div className="flex space-x-2">
+                            {canStartRide(ride.departureTime) && (
+                              <button
+                                onClick={() =>
+                                  handleUpdateRideStatus(
+                                    ride.id,
+                                    RideStatus.IN_PROGRESS
+                                  )
+                                }
+                                className="p-2 text-white bg-green-600 rounded-md hover:bg-green-700"
+                                title="Start ride"
+                              >
+                                Start Ride
+                              </button>
+                            )}
+                            {canDeleteRide(ride.departureTime) && (
+                              <button
+                                onClick={() =>
+                                  navigate(`/rides/${ride.id}/edit`)
+                                }
+                                className="p-2 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
+                                title="Edit ride"
+                              >
+                                <Edit2 size={20} />
+                              </button>
+                            )}
+                            {/* <button
                             onClick={() => handleDeleteRide(ride.id)}
                             className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
                             title="Cancel ride"
                           >
                             <Trash2 size={20} />
+                          </button> */}
+                            {canDeleteRide(ride.departureTime) && (
+                              <button
+                                onClick={() => handleDeleteRide(ride)}
+                                className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
+                                title="Cancel ride"
+                              >
+                                <Trash2 size={20} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {ride.status === RideStatus.IN_PROGRESS && (
+                          <button
+                            onClick={() =>
+                              handleUpdateRideStatus(
+                                ride.id,
+                                RideStatus.COMPLETED
+                              )
+                            }
+                            className="p-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            title="End ride"
+                          >
+                            End Ride
                           </button>
-                        </div>
-                      )}
-                      {ride.status === RideStatus.IN_PROGRESS && (
-                        <button
-                          onClick={() =>
-                            handleUpdateRideStatus(
-                              ride.id,
-                              RideStatus.COMPLETED
-                            )
-                          }
-                          className="p-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                          title="End ride"
-                        >
-                          End Ride
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </>

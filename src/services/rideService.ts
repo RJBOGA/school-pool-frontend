@@ -1,11 +1,15 @@
-import api from './api';
-import { Ride, ApiResponse, RideStatus } from '../types';
+import api from "./api";
+import { Ride, ApiResponse, RideStatus, BookingStatus } from "../types";
+import bookingService from "./bookingService";
 
 class RideService {
-  private readonly BASE_PATH = '/rides';
+  private readonly BASE_PATH = "/rides";
 
-  async createRide(rideData: Omit<Ride, 'id'>): Promise<ApiResponse<Ride>> {
-    const response = await api.post<ApiResponse<Ride>>(this.BASE_PATH, rideData);
+  async createRide(rideData: Omit<Ride, "id">): Promise<ApiResponse<Ride>> {
+    const response = await api.post<ApiResponse<Ride>>(
+      this.BASE_PATH,
+      rideData
+    );
     return response.data;
   }
 
@@ -19,12 +23,28 @@ class RideService {
       const response = await api.put<Ride>(`${this.BASE_PATH}/${id}`, updates);
       return response.data;
     } catch (error) {
-      throw new Error('Failed to update ride');
+      throw new Error("Failed to update ride");
     }
   }
 
+  // deleteRide in rideService.ts
   async deleteRide(id: string): Promise<void> {
-    await api.delete(`${this.BASE_PATH}/${id}`);
+    try {
+      const confirmedBookings =
+        await bookingService.getConfirmedBookingsForRide(id);
+
+      for (const booking of confirmedBookings) {
+        await bookingService.updateBookingStatus(
+          booking.id,
+          BookingStatus.CANCELLED
+        );
+      }
+
+      await api.delete(`${this.BASE_PATH}/${id}`);
+    } catch (error) {
+      console.error("Error deleting ride:", error);
+      throw error;
+    }
   }
 
   async getUserRides(userId: string): Promise<Ride[]> {
@@ -47,19 +67,23 @@ class RideService {
       const response = await api.get<Ride[]>(`${this.BASE_PATH}/available`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching available rides:', error);
+      console.error("Error fetching available rides:", error);
       throw error;
     }
   }
 
   async updateRideStatus(id: string, status: RideStatus): Promise<Ride> {
     try {
-      const response = await api.put<Ride>(`${this.BASE_PATH}/${id}/status`, null, {
-        params: { status }
-      });
+      const response = await api.put<Ride>(
+        `${this.BASE_PATH}/${id}/status`,
+        null,
+        {
+          params: { status },
+        }
+      );
       return response.data;
     } catch (error) {
-      console.error('Error updating ride status:', error);
+      console.error("Error updating ride status:", error);
       throw error;
     }
   }
