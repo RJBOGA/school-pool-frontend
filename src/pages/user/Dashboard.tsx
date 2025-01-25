@@ -36,6 +36,16 @@ const UserDashboard = () => {
     }
   }, []);
 
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      await bookingService.cancelBooking(bookingId);
+      // Refresh bookings
+      loadUserRides();
+    } catch (error: any) {
+      alert(error.message || "Failed to cancel booking");
+    }
+  };
+
   const handleCancelRide = async (bookingId: string) => {
     try {
       await bookingService.updateBookingStatus(
@@ -174,7 +184,12 @@ const UserDashboard = () => {
               </p>
             </div>
           ) : (
-            filteredRides.sort((a, b) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime()) // Sort descending
+            filteredRides
+              .sort(
+                (a, b) =>
+                  new Date(b.departureTime).getTime() -
+                  new Date(a.departureTime).getTime()
+              ) // Sort descending
               .filter(
                 (ride) =>
                   !confirmedRides.some(
@@ -319,6 +334,17 @@ const UserDashboard = () => {
                     Due to our policy payments are accepted only through cash to
                     the rider.
                   </div>
+                  {booking.ride.departureTime &&
+                    new Date(booking.ride.departureTime).getTime() -
+                      new Date().getTime() >
+                      24 * 60 * 60 * 1000 && (
+                      <button
+                        onClick={() => handleCancelBooking(booking.id)}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 ml-auto"
+                      >
+                        Cancel Booking
+                      </button>
+                    )}
                 </div>
               </div>
             ))}

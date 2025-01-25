@@ -1,5 +1,6 @@
 import api from "./api";
 import { Booking, ApiResponse, BookingStatus } from "../types";
+import rideService from "./rideService";
 
 class BookingService {
   private readonly BASE_PATH = "/bookings";
@@ -45,8 +46,38 @@ class BookingService {
     return response.data;
   }
 
-  async cancelBooking(id: string): Promise<void> {
-    await api.delete(`${this.BASE_PATH}/${id}`);
+  // async cancelBooking(id: string): Promise<void> {
+  //   await api.delete(`${this.BASE_PATH}/${id}`);
+  // }
+
+  async cancelBooking(bookingId: string): Promise<void> {
+    try {
+      const booking = await this.getBookingById(bookingId);
+      const departureTime = new Date(booking.ride.departureTime);
+      const now = new Date();
+      const timeDiff = departureTime.getTime() - now.getTime();
+      const hoursDiff = timeDiff / (1000 * 3600);
+  
+      if (hoursDiff < 24) {
+        throw new Error("Bookings can only be cancelled 24 hours before departure");
+      }
+  
+      await api.put(`${this.BASE_PATH}/${bookingId}/status?status=${BookingStatus.CANCELLED}`);
+      
+      const updatedRide = {
+        ...booking.ride,
+        availableSeats: booking.ride.availableSeats + 1,
+        id: booking.ride.id // Ensure id is included
+      };
+   
+      // Only send the required fields for update
+      await rideService.updateRide(booking.ride.id, {
+        availableSeats: updatedRide.availableSeats
+      });
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      throw error;
+    }
   }
 
   // Fix the URL to include phone parameter
