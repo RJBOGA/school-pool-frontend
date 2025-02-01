@@ -10,6 +10,7 @@ import {
   Trash2,
   Phone,
   User,
+CheckCircle, XCircle, AlertCircle
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { rideService, bookingService, userService } from "../../services";
@@ -56,6 +57,10 @@ const RiderDashboard: React.FC = () => {
     const departure = new Date(departureTime);
     const hourBeforeDeparture = new Date(departure.getTime() - 60 * 60 * 1000);
     return currentTime < hourBeforeDeparture;
+  };
+
+  const canEditRide = (confirmed : Booking[]): boolean => {
+    return confirmed.length <= 0
   };
 
   const handleDeleteRide = async (ride: Ride) => {
@@ -428,7 +433,7 @@ const RiderDashboard: React.FC = () => {
                                 Start Ride
                               </button>
                             )}
-                            {canDeleteRide(ride.departureTime) && (
+                            {canEditRide(confirmedBookings) && (
                               <button
                                 onClick={() =>
                                   navigate(`/rides/${ride.id}/edit`)
