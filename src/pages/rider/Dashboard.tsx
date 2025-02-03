@@ -19,6 +19,8 @@ import { rideService, bookingService, userService } from "../../services";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ride, RideStatus, Booking, BookingStatus } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
+import PreRideUpdate from "./PreRideUpdate";
+import { toast } from "react-toastify";
 
 const RiderDashboard: React.FC = () => {
   const [rides, setRides] = useState<Ride[]>([]);
@@ -459,6 +461,23 @@ const RiderDashboard: React.FC = () => {
                           >
                             End Ride
                           </button>
+                        )}
+
+                        {ride.status === RideStatus.SCHEDULED && (
+                          <PreRideUpdate
+                            rideId={ride.id}
+                            driverName={user?.firstName || ""}
+                            departureTime={ride.departureTime}
+                            onSuccess={() => {
+                              // Show success toast/message
+                              toast.success("Message sent to all passengers");
+                            }}
+                            onError={() => {
+                              toast.error(
+                                "Failed to send update. Please try again."
+                              );
+                            }}
+                          />
                         )}
                       </div>
                     </div>

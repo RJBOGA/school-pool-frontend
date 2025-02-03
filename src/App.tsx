@@ -28,6 +28,7 @@ import StudentsManagement from "./components/admin/StudentsManagement";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminLogin from "./components/admin/AdminLogin";
 import InfoPage from "./pages/InfoPage";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
               <ProtectedRoute>
                 <RouteGuard allowedRoles={[UserRole.DRIVER]}>
                   <Dashboard />
+                  <ToastContainer position="top-right" autoClose={3000} />
                 </RouteGuard>
               </ProtectedRoute>
             }
