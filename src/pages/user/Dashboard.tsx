@@ -6,12 +6,15 @@ import {
   Phone,
   BadgeDollarSign,
   Verified,
+  Star,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService, bookingService } from "../../services";
-import { Ride, BookingStatus, Booking } from "../../types";
+import { Ride, BookingStatus, Booking, User } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
+import ReviewService from "../../services/ReviewService";
+import RatingDetailsModal from "./RatingDetailsModal";
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -22,11 +25,10 @@ const UserDashboard = () => {
   const [dateFilter] = useState("");
   const [priceSort] = useState<"asc" | "desc" | "">("");
   const [confirmedRides, setConfirmedRides] = useState<Booking[]>([]);
-  const [rideHistory, setRideHistory] = useState<Booking[]>([]);
   const [isLoadingConfirmed, setIsLoadingConfirmed] = useState(true);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-
   const [pendingRides, setPendingRides] = useState<Booking[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<User | null>(null);
+  const [driverReviews, setDriverReviews] = useState<Array<any>>([]);
 
   useEffect(() => {
     if (user?.phone) {
@@ -35,6 +37,18 @@ const UserDashboard = () => {
       loadRides();
     }
   }, []);
+
+  // Add this function with the other functions
+  const handleShowReviews = async (driver: User) => {
+    try {
+      const reviews = await ReviewService.getReviewsByRiderId(driver.phone);
+      setDriverReviews(reviews);
+      setSelectedDriver(driver);
+    } catch (error) {
+      console.error("Error fetching driver reviews:", error);
+      alert("Failed to load reviews. Please try again.");
+    }
+  };
 
   const handleCancelBooking = async (bookingId: string) => {
     try {
@@ -69,7 +83,6 @@ const UserDashboard = () => {
       }
 
       setIsLoadingConfirmed(true);
-      setIsLoadingHistory(true);
 
       console.log("Loading rides for user:", user.phone);
       const userBookings = await bookingService.getUserBookings(user.phone);
@@ -83,12 +96,6 @@ const UserDashboard = () => {
         );
       });
 
-      const history = userBookings.filter(
-        (booking) =>
-          booking.status === BookingStatus.COMPLETED ||
-          new Date(booking.ride.departureTime) < new Date()
-      );
-
       const pendingRides = userBookings.filter(
         (booking) =>
           booking.status === BookingStatus.PENDING &&
@@ -96,13 +103,11 @@ const UserDashboard = () => {
       );
 
       setConfirmedRides(confirmed);
-      setRideHistory(history);
       setPendingRides(pendingRides);
     } catch (error) {
       console.error("Error loading user rides:", error);
     } finally {
       setIsLoadingConfirmed(false);
-      setIsLoadingHistory(false);
     }
   };
 
@@ -110,7 +115,6 @@ const UserDashboard = () => {
     try {
       setIsLoading(true);
       const availableRides = await rideService.getAvailableRides();
-      console.log(availableRides);
       setRides(availableRides);
       setFilteredRides(availableRides);
     } catch (error) {
@@ -199,10 +203,34 @@ const UserDashboard = () => {
               .map((ride) => (
                 <div key={ride.id} className="bg-white rounded-lg shadow p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      {ride.driver.firstName} {ride.driver.lastName}
-                      <Verified size={20} className="ml-2 text-green-500" />
-                    </h3>
+                    <div>
+                      <h3 className="text-lg font-semibold flex items-center">
+                        {ride.driver.firstName} {ride.driver.lastName}
+                        <Verified size={20} className="ml-2 text-green-500" />
+                      </h3>
+                      {/* Rating display - clickable */}
+                      <button
+                        onClick={() => handleShowReviews(ride.driver)}
+                        className="flex items-center mt-1 text-sm text-gray-600 hover:text-primary-600"
+                      >
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              className={`${
+                                star <= ride.driver.rating
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="ml-2">
+                          {ride.driver.rating.toFixed(1)} • Click to see reviews
+                        </span>
+                      </button>
+                    </div>
                     <div className="flex items-center">
                       <span className="mr-2">
                         {ride.availableSeats} Seats Available
@@ -282,6 +310,13 @@ const UserDashboard = () => {
                 </div>
               ))
           )}
+          {selectedDriver && (
+            <RatingDetailsModal
+              onClose={() => setSelectedDriver(null)}
+              reviews={driverReviews}
+              driverName={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
+            />
+          )}
         </div>
       </div>
       {/* Confirmed Rides Section */}
@@ -308,6 +343,28 @@ const UserDashboard = () => {
                   <h3 className="text-lg font-semibold">
                     Ride with {booking.ride.driver.firstName}
                   </h3>
+                  <button
+                    onClick={() => handleShowReviews(booking.ride.driver)}
+                    className="flex items-center mt-1 text-sm text-gray-600 hover:text-primary-600"
+                  >
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={16}
+                          className={`${
+                            star <= booking.ride.driver.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2">
+                      {booking.ride.driver.rating.toFixed(1)} • Click to see
+                      reviews
+                    </span>
+                  </button>
                   <h3 className="text-lg font-semibold flex items-center">
                     <Phone size={20} className="mr-2" />
                     {booking.ride.driver.phone}

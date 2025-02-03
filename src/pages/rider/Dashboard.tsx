@@ -10,7 +10,9 @@ import {
   Trash2,
   Phone,
   User,
-CheckCircle, XCircle, AlertCircle
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { rideService, bookingService, userService } from "../../services";
@@ -59,8 +61,8 @@ const RiderDashboard: React.FC = () => {
     return currentTime < hourBeforeDeparture;
   };
 
-  const canEditRide = (confirmed : Booking[]): boolean => {
-    return confirmed.length <= 0
+  const canEditRide = (confirmed: Booking[]): boolean => {
+    return confirmed.length <= 0;
   };
 
   const handleDeleteRide = async (ride: Ride) => {
@@ -164,17 +166,6 @@ const RiderDashboard: React.FC = () => {
       console.error("Error updating booking:", error);
     }
   };
-
-  // const handleDeleteRide = async (rideId: string) => {
-  //   if (window.confirm("Are you sure you want to cancel this ride?")) {
-  //     try {
-  //       await rideService.deleteRide(rideId);
-  //       loadRides();
-  //     } catch (error) {
-  //       console.error("Error deleting ride:", error);
-  //     }
-  //   }
-  // };
 
   const canStartRide = (departureTime: string): boolean => {
     const fifteenMinutesBefore = new Date(departureTime);
@@ -444,13 +435,6 @@ const RiderDashboard: React.FC = () => {
                                 <Edit2 size={20} />
                               </button>
                             )}
-                            {/* <button
-                            onClick={() => handleDeleteRide(ride.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
-                            title="Cancel ride"
-                          >
-                            <Trash2 size={20} />
-                          </button> */}
                             {canDeleteRide(ride.departureTime) && (
                               <button
                                 onClick={() => handleDeleteRide(ride)}
