@@ -5,14 +5,31 @@ import rideService from "./rideService";
 class BookingService {
   private readonly BASE_PATH = "/bookings";
 
+  // async createBooking(
+  //   bookingData: Omit<Booking, "id">
+  // ): Promise<ApiResponse<Booking>> {
+  //   const response = await api.post<ApiResponse<Booking>>(
+  //     this.BASE_PATH,
+  //     bookingData
+  //   );
+  //   return response.data;
+  // }
+
   async createBooking(
     bookingData: Omit<Booking, "id">
   ): Promise<ApiResponse<Booking>> {
-    const response = await api.post<ApiResponse<Booking>>(
-      this.BASE_PATH,
-      bookingData
-    );
-    return response.data;
+    try {
+      console.log("Sending booking data:", bookingData);
+      const response = await api.post<ApiResponse<Booking>>(
+        this.BASE_PATH,
+        bookingData
+      );
+      console.log("Booking response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Booking error:", error);
+      throw error;
+    }
   }
 
   async getBookingById(id: string): Promise<Booking> {
@@ -40,10 +57,20 @@ class BookingService {
   }
 
   async updateBookingStatus(id: string, status: string): Promise<Booking> {
-    const response = await api.put<Booking>(
-      `${this.BASE_PATH}/${id}/status?status=${status}` // Note: Changed to query parameter
-    );
-    return response.data;
+    try {
+      const response = await api.put<Booking>(
+        `${this.BASE_PATH}/${id}/status`,
+        null,
+        { params: { status } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+    // const response = await api.put<Booking>(
+    //   `${this.BASE_PATH}/${id}/status?status=${status}` // Note: Changed to query parameter
+    // );
+    // return response.data;
   }
 
   // async cancelBooking(id: string): Promise<void> {
@@ -57,25 +84,28 @@ class BookingService {
       const now = new Date();
       const timeDiff = departureTime.getTime() - now.getTime();
       const hoursDiff = timeDiff / (1000 * 3600);
-  
+
       if (hoursDiff < 24) {
-        throw new Error("Bookings can only be cancelled 24 hours before departure");
+        throw new Error(
+          "Bookings can only be cancelled 24 hours before departure"
+        );
       }
-  
-      await api.put(`${this.BASE_PATH}/${bookingId}/status?status=${BookingStatus.CANCELLED}`);
-      
+
+      await api.put(
+        `${this.BASE_PATH}/${bookingId}/status?status=${BookingStatus.CANCELLED}`
+      );
+
       const updatedRide = {
         ...booking.ride,
         availableSeats: booking.ride.availableSeats + 1,
-        id: booking.ride.id // Ensure id is included
+        id: booking.ride.id, // Ensure id is included
       };
-   
       // Only send the required fields for update
       await rideService.updateRide(booking.ride.id, {
-        availableSeats: updatedRide.availableSeats
+        availableSeats: updatedRide.availableSeats,
       });
     } catch (error) {
-      console.error('Error cancelling booking:', error);
+      console.error("Error cancelling booking:", error);
       throw error;
     }
   }
@@ -86,6 +116,7 @@ class BookingService {
       const response = await api.get<Booking[]>(
         `${this.BASE_PATH}/driver/${driverPhone}/pending`
       );
+      console.log("getDriverPendingBookings response", response.data)
       return response.data;
     } catch (error) {
       console.error("Error fetching pending bookings:", error);
@@ -128,10 +159,27 @@ class BookingService {
         { params: { status } }
       );
       return response.data;
-    } catch (error) {
-      console.error("Error updating booking status:", error);
-      throw error;
+    } catch (error: any) {
+      // Extract error message from response if available
+      const errorMessage =
+        error.response?.data?.message || "Error updating booking status";
+      console.error("Error updating booking status:", errorMessage);
+      throw new Error(errorMessage);
     }
+  }
+
+  async getWaitlistCount(rideId: string): Promise<number> {
+    const response = await api.get<number>(
+      `${this.BASE_PATH}/ride/${rideId}/waitlist/count`
+    );
+    return response.data;
+  }
+
+  async getWaitlistedBookings(rideId: string): Promise<Booking[]> {
+    const response = await api.get<Booking[]>(
+      `${this.BASE_PATH}/ride/${rideId}/waitlist`
+    );
+    return response.data;
   }
 }
 

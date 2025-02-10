@@ -1,4 +1,4 @@
-import { UserRole, RideStatus, BookingStatus } from './enums';
+import { UserRole, RideStatus, BookingStatus } from "./enums";
 
 export interface LoginRequest {
   phone: string;
@@ -13,23 +13,23 @@ export interface Vehicle {
   driverPhotoPath?: string;
   licensePhotoPath?: string;
 }
-  
-  export interface User {
-    phone: string;  // Using as ID
-    firstName: string;
-    lastName: string;
-    email: string;
-    universityEmail: string;
-    university: string;
-    password: string;
-    role: UserRole;
-    rating: number;
-    isDriverVerified: boolean;
-    vehicleDetails?: Vehicle[];
-  }
+
+export interface User {
+  phone: string; // Using as ID
+  firstName: string;
+  lastName: string;
+  email: string;
+  universityEmail: string;
+  university: string;
+  password: string;
+  role: UserRole;
+  rating: number;
+  isDriverVerified: boolean;
+  vehicleDetails?: Vehicle[];
+}
 
 export interface GeoJsonPoint {
-  type: 'Point';
+  type: "Point";
   coordinates: [number, number]; // [longitude, latitude]
 }
 
@@ -53,20 +53,22 @@ export interface Booking {
   passenger: User;
   status: BookingStatus;
   bookingTime: string; // ISO date string
+  waitlistExpiration: string | undefined;
+  waitlistPosition: number | undefined;
 }
 
 // Add these to your types/models.ts
 export interface LoginRequest {
-    phone: string;
-    password: string;
-  }
-  
-  export interface LoginResponse {
-    success: boolean;
-    message: string;
-    user?: User;
-    // Add any other fields your backend returns
-  }
+  phone: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  user?: User;
+  // Add any other fields your backend returns
+}
 
 export interface RegisterRequest extends User {
   password: string;

@@ -145,6 +145,7 @@ const RiderDashboard: React.FC = () => {
         const bookings = await bookingService.getDriverPendingBookings(
           user.phone
         );
+        console.log("loadPendingBookings", bookings);
         setPendingBookings(bookings);
       }
     } catch (error) {
@@ -154,18 +155,22 @@ const RiderDashboard: React.FC = () => {
     }
   };
 
-  const handleBookingResponse = async (
-    bookingId: string,
-    status: BookingStatus
-  ) => {
+  const handleBookingResponse = async (bookingId: string, status: BookingStatus) => {
     try {
       await bookingService.respondToBooking(bookingId, status);
       // Refresh both bookings and rides
       loadPendingBookings();
       loadRides();
       loadConfirmedBookings();
-    } catch (error) {
-      console.error("Error updating booking:", error);
+      // Show success message
+      toast.success(status === BookingStatus.CONFIRMED ? 
+        'Booking confirmed successfully' : 
+        'Booking cancelled successfully'
+      );
+    } catch (error: any) {
+      // Show error message to user
+      toast.error(error.message || 'Failed to update booking status');
+      console.error('Error updating booking:', error);
     }
   };
 
