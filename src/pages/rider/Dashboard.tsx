@@ -13,6 +13,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Play,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { rideService, bookingService, userService } from "../../services";
@@ -64,7 +65,7 @@ const RiderDashboard: React.FC = () => {
   };
 
   const canEditRide = (confirmed: Booking[]): boolean => {
-    return confirmed.length <= 0;
+    return false;
   };
 
   const handleDeleteRide = async (ride: Ride) => {
@@ -155,7 +156,10 @@ const RiderDashboard: React.FC = () => {
     }
   };
 
-  const handleBookingResponse = async (bookingId: string, status: BookingStatus) => {
+  const handleBookingResponse = async (
+    bookingId: string,
+    status: BookingStatus
+  ) => {
     try {
       await bookingService.respondToBooking(bookingId, status);
       // Refresh both bookings and rides
@@ -163,14 +167,15 @@ const RiderDashboard: React.FC = () => {
       loadRides();
       loadConfirmedBookings();
       // Show success message
-      toast.success(status === BookingStatus.CONFIRMED ? 
-        'Booking confirmed successfully' : 
-        'Booking cancelled successfully'
+      toast.success(
+        status === BookingStatus.CONFIRMED
+          ? "Booking confirmed successfully"
+          : "Booking cancelled successfully"
       );
     } catch (error: any) {
       // Show error message to user
-      toast.error(error.message || 'Failed to update booking status');
-      console.error('Error updating booking:', error);
+      toast.error(error.message || "Failed to update booking status");
+      console.error("Error updating booking:", error);
     }
   };
 
@@ -345,15 +350,16 @@ const RiderDashboard: React.FC = () => {
                       key={ride.id}
                       className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Left column: Ride info and primary actions */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
                             <div className="flex items-center text-gray-600">
-                              <Clock size={20} className="mr-2" />
+                              <Clock size={18} className="mr-1.5" />
                               {formatDateTime(ride.departureTime)}
                             </div>
                             <span
-                              className={`px-2 py-1 rounded-full text-sm ${
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                                 ride.status === RideStatus.SCHEDULED
                                   ? "bg-green-100 text-green-800"
                                   : ride.status === RideStatus.IN_PROGRESS
@@ -366,124 +372,169 @@ const RiderDashboard: React.FC = () => {
                               {ride.status}
                             </span>
                           </div>
+
                           <div className="space-y-2">
-                            <div className="flex items-center text-gray-600">
-                              <MapPin size={20} className="mr-2" />
-                              From: {ride.origin}
+                            <div className="flex items-start text-gray-600">
+                              <MapPin
+                                size={18}
+                                className="mr-1.5 mt-0.5 flex-shrink-0"
+                              />
+                              <span className="line-clamp-1">
+                                From: {ride.origin}
+                              </span>
                             </div>
-                            <div className="flex items-center text-gray-600">
-                              <MapPin size={20} className="mr-2" />
-                              To: {ride.destination}
+                            <div className="flex items-start text-gray-600">
+                              <MapPin
+                                size={18}
+                                className="mr-1.5 mt-0.5 flex-shrink-0"
+                              />
+                              <span className="line-clamp-1">
+                                To: {ride.destination}
+                              </span>
                             </div>
                           </div>
+
                           <div className="flex items-center text-gray-600">
-                            <Users size={20} className="mr-2" />
+                            <Users size={18} className="mr-1.5" />
                             {ride.availableSeats} seats available
                           </div>
-                          <div className="flex items-center text-gray-600">
-                            <InformationCircleIcon className="mr-2 h-5 w-5" />
-                            Payments are received only through cash from the
-                            students.
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <h4 className="font-medium text-gray-700">
-                            Booked Passengers:
-                          </h4>
-                          {confirmedBookings
-                            .filter((booking) => booking.ride.id === ride.id)
-                            .map((booking) => (
-                              <div
-                                key={booking.id}
-                                className="flex justify-between items-center bg-gray-50 p-3 rounded"
-                              >
-                                <div>
-                                  <p className="font-medium flex items-center">
-                                    <User size={20} className="mr-1" />
-                                    {booking.passenger.firstName}{" "}
-                                    {booking.passenger.lastName}
-                                  </p>
-                                  <p className="text-sm text-gray-600 flex items-center">
-                                    <Phone size={20} className="mr-1" />
-                                    {booking.passenger.phone}
-                                  </p>
-                                  <span className="px-1 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                    Confirmed
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
 
-                        {ride.status === RideStatus.SCHEDULED && (
-                          <div className="flex space-x-2">
-                            {canStartRide(ride.departureTime) && (
+                          <div className="flex items-center text-gray-600 text-sm">
+                            <InformationCircleIcon className="w-4 h-4 mr-1.5" />
+                            Payments are received only through cash.
+                          </div>
+
+                          {/* Primary action buttons - moved here */}
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {ride.status === RideStatus.SCHEDULED &&
+                              canStartRide(ride.departureTime) && (
+                                <button
+                                  onClick={() =>
+                                    handleUpdateRideStatus(
+                                      ride.id,
+                                      RideStatus.IN_PROGRESS
+                                    )
+                                  }
+                                  className="px-3 py-1.5 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 flex items-center"
+                                  title="Start ride"
+                                >
+                                  <Play size={16} className="mr-1" />
+                                  Start Ride
+                                </button>
+                              )}
+
+                            {ride.status === RideStatus.IN_PROGRESS && (
                               <button
                                 onClick={() =>
                                   handleUpdateRideStatus(
                                     ride.id,
-                                    RideStatus.IN_PROGRESS
+                                    RideStatus.COMPLETED
                                   )
                                 }
-                                className="p-2 text-white bg-green-600 rounded-md hover:bg-green-700"
-                                title="Start ride"
+                                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center"
+                                title="End ride"
                               >
-                                Start Ride
+                                <CheckCircle size={16} className="mr-1" />
+                                End Ride
                               </button>
                             )}
-                            {canEditRide(confirmedBookings) && (
-                              <button
-                                onClick={() =>
-                                  navigate(`/rides/${ride.id}/edit`)
-                                }
-                                className="p-2 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
-                                title="Edit ride"
-                              >
-                                <Edit2 size={20} />
-                              </button>
-                            )}
-                            {canDeleteRide(ride.departureTime) && (
-                              <button
-                                onClick={() => handleDeleteRide(ride)}
-                                className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-50"
-                                title="Cancel ride"
-                              >
-                                <Trash2 size={20} />
-                              </button>
+
+                            {/* Secondary action buttons */}
+                            {ride.status === RideStatus.SCHEDULED && (
+                              <>
+                                {canEditRide(confirmedBookings) && (
+                                  <button
+                                    onClick={() =>
+                                      navigate(`/rides/${ride.id}/edit`)
+                                    }
+                                    className="p-1.5 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50"
+                                    title="Edit ride"
+                                  >
+                                    <Edit2 size={18} />
+                                  </button>
+                                )}
+                                {canDeleteRide(ride.departureTime) && (
+                                  <button
+                                    onClick={() => handleDeleteRide(ride)}
+                                    className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 flex items-center"
+                                    title="Cancel ride"
+                                  >
+                                    <Trash2 size={18} />
+                                    Cancel Ride
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
-                        )}
-                        {ride.status === RideStatus.IN_PROGRESS && (
-                          <button
-                            onClick={() =>
-                              handleUpdateRideStatus(
-                                ride.id,
-                                RideStatus.COMPLETED
-                              )
-                            }
-                            className="p-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                            title="End ride"
-                          >
-                            End Ride
-                          </button>
-                        )}
+                        </div>
 
-                        {ride.status === RideStatus.SCHEDULED && (
-                          <PreRideUpdate
-                            rideId={ride.id}
-                            driverName={user?.firstName || ""}
-                            departureTime={ride.departureTime}
-                            onSuccess={() => {
-                              // Show success toast/message
-                              toast.success("Message sent to all passengers");
-                            }}
-                            onError={() => {
-                              toast.error(
-                                "Failed to send update. Please try again."
-                              );
-                            }}
-                          />
-                        )}
+                        {/* Right column: Passengers and message update */}
+                        <div className="flex flex-col justify-between h-full">
+                          <div>
+                            <h4 className="font-medium text-gray-700 mb-2">
+                              Booked Passengers:
+                            </h4>
+                            <div className="max-h-32 overflow-y-auto">
+                              {confirmedBookings
+                                .filter(
+                                  (booking) => booking.ride.id === ride.id
+                                )
+                                .map((booking) => (
+                                  <div
+                                    key={booking.id}
+                                    className="mb-2 bg-gray-50 p-2 rounded flex items-start"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm flex items-center truncate">
+                                        <User
+                                          size={14}
+                                          className="mr-1.5 flex-shrink-0"
+                                        />
+                                        <span className="truncate">
+                                          {booking.passenger.firstName}{" "}
+                                          {booking.passenger.lastName}
+                                        </span>
+                                      </p>
+                                      <p className="text-xs text-gray-600 flex items-center truncate">
+                                        <Phone
+                                          size={14}
+                                          className="mr-1.5 flex-shrink-0"
+                                        />
+                                        <span className="truncate">
+                                          {booking.passenger.phone}
+                                        </span>
+                                      </p>
+                                      <span className="inline-block px-1.5 py-0.5 bg-green-100 text-green-800 rounded text-xs">
+                                        Confirmed
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+
+                          {/* Pre-ride update component */}
+                          {ride.status === RideStatus.SCHEDULED &&
+                            canStartRide(ride.departureTime) && (
+                              <div className="mt-3">
+                                <PreRideUpdate
+                                  rideId={ride.id}
+                                  driverName={user?.firstName || ""}
+                                  departureTime={ride.departureTime}
+                                  onSuccess={() => {
+                                    toast.success(
+                                      "Message sent to all passengers"
+                                    );
+                                  }}
+                                  onError={() => {
+                                    toast.error(
+                                      "Failed to send update. Please try again."
+                                    );
+                                  }}
+                                />
+                              </div>
+                            )}
+                        </div>
                       </div>
                     </div>
                   ))}

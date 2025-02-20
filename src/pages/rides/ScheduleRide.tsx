@@ -3,17 +3,37 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MapPin, Clock, Users, BadgeDollarSign } from "lucide-react";
+import { Clock, Users, BadgeDollarSign } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
 import { rideService } from "../../services";
 import { RideStatus } from "../../types";
-import { LOCATIONS } from "../../constants/locations";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
+import MapLocationSelector from "../../components/common/MapLocationSelector";
+import { Coordinates } from "../../types/LocationTypes";
+import { GeoJsonPoint } from "../../types/GeoJsonTypes";
+import { checkLeafletResources, fixCommonLeafletIssues } from "../../utils/mapDebugUtils";
+import { initializeLeaflet } from "../../utils/leafletLoader";
 
+// Ensure Leaflet CSS is loaded
+import "leaflet/dist/leaflet.css";
+
+// Update schema to include coordinates
 const scheduleRideSchema = z.object({
   origin: z.string().min(1, "Starting location is required"),
+  originCoordinates: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
   destination: z.string().min(1, "Destination is required"),
+  destinationCoordinates: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
   departureTime: z.string().min(1, "Departure time is required"),
   totalSeats: z
     .number()
@@ -31,17 +51,28 @@ const ScheduleRide = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [originSearch, setOriginSearch] = useState("");
-  const [destinationSearch, setDestinationSearch] = useState("");
-  const [isOriginDropdownOpen, setIsOriginDropdownOpen] = useState(false);
-  const [isDestinationDropdownOpen, setIsDestinationDropdownOpen] =
-    useState(false);
-  const [filteredOrigins, setFilteredOrigins] = useState<
-    Array<[string, string]>
-  >([]);
-  const [filteredDestinations, setFilteredDestinations] = useState<
-    Array<[string, string]>
-  >([]);
+  
+  // State for location data
+  const [originAddress, setOriginAddress] = useState("");
+  const [originCoordinates, setOriginCoordinates] = useState<Coordinates | null>(null);
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [destinationCoordinates, setDestinationCoordinates] = useState<Coordinates | null>(null);
+
+  // Initialize Leaflet resources when component mounts
+  useEffect(() => {
+    initializeLeaflet()
+      .then(() => {
+        console.log('Leaflet resources initialized in ScheduleRide component');
+      })
+      .catch(error => {
+        console.error('Failed to initialize Leaflet resources:', error);
+        // Fallback - try to fix common issues
+        fixCommonLeafletIssues();
+      });
+      
+    // Debug Leaflet resource loading
+    checkLeafletResources();
+  }, []);
 
   const getNowAsLocalISOString = () => {
     const now = new Date();
@@ -78,18 +109,25 @@ const ScheduleRide = () => {
     },
   });
 
-  const filterLocations = (
-    searchTerm: string,
-    setFiltered: React.Dispatch<React.SetStateAction<Array<[string, string]>>>
-  ) => {
-    const filtered = Object.entries(LOCATIONS).filter(([_, value]) =>
-      value.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFiltered(filtered);
+  const handleOriginChange = (address: string, coordinates: Coordinates) => {
+    console.log("Origin changed:", address, coordinates);
+    setOriginAddress(address);
+    setOriginCoordinates(coordinates);
+    setValue("origin", address);
+    setValue("originCoordinates", coordinates);
+  };
+
+  const handleDestinationChange = (address: string, coordinates: Coordinates) => {
+    console.log("Destination changed:", address, coordinates);
+    setDestinationAddress(address);
+    setDestinationCoordinates(coordinates);
+    setValue("destination", address);
+    setValue("destinationCoordinates", coordinates);
   };
 
   const onSubmit = async (data: ScheduleRideForm) => {
     if (!user) return;
+    console.log("Submitting form data:", data);
 
     try {
       setIsSubmitting(true);
@@ -113,12 +151,37 @@ const ScheduleRide = () => {
         return;
       }
 
+      // Create properly formatted GeoJsonPoint objects
+      const coordinates: GeoJsonPoint[] = [];
+      
+      if (data.originCoordinates) {
+        coordinates.push({
+          type: "Point",
+          coordinates: [data.originCoordinates.lng, data.originCoordinates.lat]
+        });
+      }
+      
+      if (data.destinationCoordinates) {
+        coordinates.push({
+          type: "Point",
+          coordinates: [data.destinationCoordinates.lng, data.destinationCoordinates.lat]
+        });
+      }
+
+      // Create ride data
       const rideData = {
-        ...data,
+        origin: data.origin,
+        destination: data.destination,
+        departureTime: data.departureTime,
+        totalSeats: data.totalSeats,
+        price: data.price,
         driver: user,
         status: RideStatus.SCHEDULED,
         availableSeats: data.totalSeats,
+        coordinates
       };
+      
+      console.log("Sending ride data to server:", rideData);
       await rideService.createRide(rideData);
       navigate("/dashboard");
     } catch (error) {
@@ -140,103 +203,38 @@ const ScheduleRide = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-6 bg-white rounded-lg shadow p-6"
           >
-            {/* Origin */}
+            {/* Origin with Map */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Starting Location
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={originSearch}
-                  onChange={(e) => {
-                    setOriginSearch(e.target.value);
-                    filterLocations(e.target.value, setFilteredOrigins);
-                    setIsOriginDropdownOpen(true);
-                  }}
-                  onFocus={() => {
-                    filterLocations(originSearch, setFilteredOrigins);
-                    setIsOriginDropdownOpen(true);
-                  }}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Search starting location..."
-                />
-                {isOriginDropdownOpen && filteredOrigins.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border max-h-60 overflow-y-auto">
-                    {filteredOrigins.map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => {
-                          setValue("origin", value);
-                          setOriginSearch(value);
-                          setIsOriginDropdownOpen(false);
-                        }}
-                      >
-                        {value}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {errors.origin && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.origin.message}
-                </p>
-              )}
+              <MapLocationSelector
+                value={originAddress}
+                coordinates={originCoordinates}
+                onChange={handleOriginChange}
+                placeholder="Search or click on map to set starting location"
+                error={errors.origin?.message}
+                name="origin"
+                register={register}
+                mapHeight="300px"
+              />
             </div>
 
-            {/* Destination */}
+            {/* Destination with Map */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Destination
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={destinationSearch}
-                  onChange={(e) => {
-                    setDestinationSearch(e.target.value);
-                    filterLocations(e.target.value, setFilteredDestinations);
-                    setIsDestinationDropdownOpen(true);
-                  }}
-                  onFocus={() => {
-                    filterLocations(destinationSearch, setFilteredDestinations);
-                    setIsDestinationDropdownOpen(true);
-                  }}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Search destination..."
-                />
-                {isDestinationDropdownOpen &&
-                  filteredDestinations.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border max-h-60 overflow-y-auto">
-                      {filteredDestinations.map(([key, value]) => (
-                        <div
-                          key={key}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => {
-                            setValue("destination", value);
-                            setDestinationSearch(value);
-                            setIsDestinationDropdownOpen(false);
-                          }}
-                        >
-                          {value}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-              </div>
-              {errors.destination && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.destination.message}
-                </p>
-              )}
+              <MapLocationSelector
+                value={destinationAddress}
+                coordinates={destinationCoordinates}
+                onChange={handleDestinationChange}
+                placeholder="Search or click on map to set destination"
+                error={errors.destination?.message}
+                name="destination"
+                register={register}
+                mapHeight="300px"
+              />
             </div>
 
             {/* Departure Time */}
@@ -261,8 +259,6 @@ const ScheduleRide = () => {
                 </p>
               )}
             </div>
-
-            {/* <p>Current Minimum Time: {minTime}</p> */}
 
             {/* Seats */}
             <div>
