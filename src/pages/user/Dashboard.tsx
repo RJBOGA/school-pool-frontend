@@ -9,6 +9,7 @@ import {
   Star,
   Users,
   Clock,
+  Newspaper,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -17,6 +18,22 @@ import { Ride, BookingStatus, Booking, User } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
 import ReviewService from "../../services/ReviewService";
 import RatingDetailsModal from "./RatingDetailsModal";
+import newsService from "../../services/newsService";
+import NewsModal from "../../components/common/NewsModal";
+import { Coordinates } from "../../types/LocationTypes";
+
+interface NewsArticle {
+  title: string;
+  description: string;
+  content: string;
+  url: string;
+  publishedAt: string;
+  sentiment_score: number;
+  source: {
+    id: string | null;
+    name: string;
+  };
+}
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -32,6 +49,11 @@ const UserDashboard = () => {
   );
   const [selectedDriver, setSelectedDriver] = useState<User | null>(null);
   const [driverReviews, setDriverReviews] = useState<Array<any>>([]);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[] | null>(null);
+  const [newsError, setNewsError] = useState<string | null>(null);
+  const [isFetchingNews, setIsFetchingNews] = useState(false);
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [selectedRideDestination, setSelectedRideDestination] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.phone) {
@@ -124,7 +146,7 @@ const UserDashboard = () => {
   const handleRequestRide = async (ride: Ride) => {
     try {
       if (!user) return;
-  
+
       const isWaitlisted = ride.availableSeats === 0;
       const bookingData = {
         ride: ride,
@@ -132,16 +154,16 @@ const UserDashboard = () => {
         status: isWaitlisted ? BookingStatus.WAITLISTED : BookingStatus.PENDING,
         bookingTime: new Date().toISOString(),
         waitlistPosition: isWaitlisted ? (waitlistCounts[ride.id] || 0) + 1 : undefined,
-        waitlistExpiration: isWaitlisted 
-          ? new Date(Date.now() + 60 * 60 * 1000).toISOString() 
+        waitlistExpiration: isWaitlisted
+          ? new Date(Date.now() + 60 * 60 * 1000).toISOString()
           : undefined
       };
-  
+
       await bookingService.createBooking(bookingData);
-      alert(isWaitlisted 
-        ? `Added to waitlist at position #${bookingData.waitlistPosition}` 
+      alert(isWaitlisted
+        ? `Added to waitlist at position #${bookingData.waitlistPosition}`
         : "Ride request sent successfully!");
-      
+
       await loadUserRides();
       await loadWaitlistCounts();
     } catch (error) {
@@ -244,6 +266,45 @@ const UserDashboard = () => {
     );
   };
 
+  const handleGetNews = async (ride: Ride) => {
+    setSelectedRideDestination(ride.destination);
+    if (!ride.coordinates || ride.coordinates.length === 0) {
+      alert("Could not retrieve coordinates for this destination.");
+      return;
+    }
+
+    setIsFetchingNews(true);
+    setNewsArticles(null);
+    setNewsError(null);
+    setIsNewsModalOpen(true);
+    const destinationCoordinates: Coordinates = {
+      lat: ride.coordinates[1].coordinates[1],
+      lng: ride.coordinates[1].coordinates[0]
+    };
+    console.log("destinationCoordinates",destinationCoordinates)
+
+    try {
+      const data = await newsService.getFilteredNewsAndSentimentByGeo(
+        destinationCoordinates.lat,
+        destinationCoordinates.lng
+      );
+      setNewsArticles(data.articles);
+    } catch (err: any) {
+      setNewsError(err.message || "Failed to fetch news");
+    } finally {
+      setIsFetchingNews(false);
+    }
+  };
+
+
+  const closeNewsModal = () => {
+    setIsNewsModalOpen(false);
+    setNewsArticles(null);
+    setNewsError(null);
+    setSelectedRideDestination(null);
+  };
+
+
   return (
     <Layout>
       <div className="container mx-auto px-2 py-2 mt-8">
@@ -281,10 +342,8 @@ const UserDashboard = () => {
               )
               .filter(
                 (ride) =>
-                  // Don't show rides that user has already requested or is waitlisted for
-                  //!pendingRides.some((pendingBooking) => pendingBooking.ride.id === ride.id) &&
+                  !pendingRides.some((pendingBooking) => pendingBooking.ride.id === ride.id) &&
                   !waitlistedRides.some((waitlistedBooking) => waitlistedBooking.ride.id === ride.id) &&
-                  // Don't show if confirmed
                   !confirmedRides.some((confirmedBooking) => confirmedBooking.ride.id === ride.id)
               )
               .map((ride) => (
@@ -394,6 +453,15 @@ const UserDashboard = () => {
                       {ride.availableSeats === 0 ? "Join Waitlist" : "Request Ride"}
                     </button>
                   )}
+
+                  <button
+                    onClick={() => handleGetNews(ride)}
+                    disabled={isFetchingNews}
+                    className="ml-2 text-sm text-blue-500 hover:text-blue-700 flex items-center"
+                  >
+                    <Newspaper size={16} className="inline-block mr-1" />
+                    {isFetchingNews ? "Fetching News..." : "News"}
+                  </button>
                 </div>
               ))
           )}
@@ -404,6 +472,13 @@ const UserDashboard = () => {
               driverName={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
             />
           )}
+          <NewsModal
+            isOpen={isNewsModalOpen}
+            onClose={closeNewsModal}
+            articles={newsArticles}
+            error={newsError}
+            destination={selectedRideDestination || ""}
+          />
         </div>
 
         {/* Waitlisted Rides Section */}

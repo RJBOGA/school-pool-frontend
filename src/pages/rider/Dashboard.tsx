@@ -14,6 +14,7 @@ import {
   XCircle,
   AlertCircle,
   Play,
+  Newspaper,
 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import { rideService, bookingService, userService } from "../../services";
@@ -22,6 +23,24 @@ import { Ride, RideStatus, Booking, BookingStatus } from "../../types";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
 import PreRideUpdate from "./PreRideUpdate";
 import { toast } from "react-toastify";
+import NewsModal from "../../components/common/NewsModal";
+import newsService from "../../services/newsService";
+import { GeoJsonPoint } from "../../types/GeoJsonTypes";
+import { Coordinates } from "../../types/LocationTypes";
+
+
+interface NewsArticle {
+  title: string;
+  description: string;
+  content: string;
+  url: string;
+  publishedAt: string;
+  sentiment_score: number;
+  source: {
+    id: string | null;
+    name: string;
+  };
+}
 
 const RiderDashboard: React.FC = () => {
   const [rides, setRides] = useState<Ride[]>([]);
@@ -34,6 +53,11 @@ const RiderDashboard: React.FC = () => {
   const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
   const [today, setToday] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedRideDestination, setSelectedRideDestination] = useState<string | null>(null);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[] | null>(null);
+  const [newsError, setNewsError] = useState<string | null>(null);
+  const [isFetchingNews, setIsFetchingNews] = useState(false);
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const hasNoFutureRides =
     rides.length === 0 ||
     rides.every(
@@ -95,7 +119,7 @@ const RiderDashboard: React.FC = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setToday(new Date());
-    }, 1000); // Update every second
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -115,7 +139,6 @@ const RiderDashboard: React.FC = () => {
     }
   };
 
-  // Add loading function for confirmed bookings
   const loadConfirmedBookings = async () => {
     try {
       if (!user?.phone) return;
@@ -129,7 +152,6 @@ const RiderDashboard: React.FC = () => {
     }
   };
 
-  // Add to useEffect
   useEffect(() => {
     if (user?.phone) {
       loadRides();
@@ -142,7 +164,6 @@ const RiderDashboard: React.FC = () => {
     try {
       setIsLoadingBookings(true);
       if (user?.phone) {
-        // Add a check for user existence
         const bookings = await bookingService.getDriverPendingBookings(
           user.phone
         );
@@ -162,18 +183,15 @@ const RiderDashboard: React.FC = () => {
   ) => {
     try {
       await bookingService.respondToBooking(bookingId, status);
-      // Refresh both bookings and rides
       loadPendingBookings();
       loadRides();
       loadConfirmedBookings();
-      // Show success message
       toast.success(
         status === BookingStatus.CONFIRMED
           ? "Booking confirmed successfully"
           : "Booking cancelled successfully"
       );
     } catch (error: any) {
-      // Show error message to user
       toast.error(error.message || "Failed to update booking status");
       console.error("Error updating booking:", error);
     }
@@ -188,7 +206,7 @@ const RiderDashboard: React.FC = () => {
   const handleUpdateRideStatus = async (rideId: string, status: RideStatus) => {
     try {
       await rideService.updateRideStatus(rideId, status);
-      loadRides(); // Refresh the rides list
+      loadRides();
     } catch (error) {
       console.error("Error updating ride status:", error);
       alert("Failed to update ride status");
@@ -198,6 +216,44 @@ const RiderDashboard: React.FC = () => {
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString();
   };
+
+  const handleGetNews = async (ride: Ride) => {
+      setSelectedRideDestination(ride.destination);
+      if (!ride.coordinates || ride.coordinates.length === 0) {
+        alert("Could not retrieve coordinates for this destination.");
+        return;
+      }
+  
+      setIsFetchingNews(true);
+      setNewsArticles(null);
+      setNewsError(null);
+      setIsNewsModalOpen(true);
+      const destinationCoordinates: Coordinates = {
+        lat: ride.coordinates[1].coordinates[1],
+        lng: ride.coordinates[1].coordinates[0]
+      };
+      console.log("destinationCoordinates",destinationCoordinates)
+  
+      try {
+        const data = await newsService.getFilteredNewsAndSentimentByGeo(
+          destinationCoordinates.lat,
+          destinationCoordinates.lng
+        );
+        setNewsArticles(data.articles);
+      } catch (err: any) {
+        setNewsError(err.message || "Failed to fetch news");
+      } finally {
+        setIsFetchingNews(false);
+      }
+    };
+  
+  
+    const closeNewsModal = () => {
+      setIsNewsModalOpen(false);
+      setNewsArticles(null);
+      setNewsError(null);
+      setSelectedRideDestination(null);
+    };
 
   return (
     <Layout>
@@ -209,7 +265,6 @@ const RiderDashboard: React.FC = () => {
             </h1>
           </center>
         </div>
-        {/* Pending Bookings Section */}
         {!isLoadingBookings && pendingBookings.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -226,7 +281,7 @@ const RiderDashboard: React.FC = () => {
                       <div className="flex items-center">
                         <Users className="h-5 w-5 text-gray-400 mr-2" />
                         <span className="font-medium">
-                          {booking.passenger.firstName}{" "}
+                          {booking.passenger.firstName}
                           {booking.passenger.lastName}
                         </span>
                       </div>
@@ -237,7 +292,7 @@ const RiderDashboard: React.FC = () => {
                         </div>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
-                          Departure:{" "}
+                          Departure:
                           {formatDateTime(booking.ride.departureTime)}
                         </div>
                         <div>
@@ -278,7 +333,6 @@ const RiderDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Error Message */}
         {error ? (
           <div className="text-red-600 text-center py-8">
             {error}
@@ -298,14 +352,12 @@ const RiderDashboard: React.FC = () => {
               <button
                 onClick={() => {
                   if (!user?.isDriverVerified) {
-                    // Handle the case where the user is not verified
-                    // e.g., show an error message, redirect to verification page
                     alert("You need to be verified to schedule rides.");
                   } else {
                     navigate("/rides/new");
                   }
                 }}
-                className={`flex items-center px-4 py-2 rounded-md 
+                className={`flex items-center px-4 py-2 rounded-md
           ${
             user?.isDriverVerified
               ? "bg-primary-600 text-white hover:bg-primary-700"
@@ -338,12 +390,12 @@ const RiderDashboard: React.FC = () => {
                     (a, b) =>
                       new Date(a.departureTime).getTime() -
                       new Date(b.departureTime).getTime()
-                  ) // Sort ascending
+                  )
                   .filter(
                     (ride) =>
                       ride.status !== RideStatus.COMPLETED &&
                       ride.status !== RideStatus.CANCELLED &&
-                      new Date(ride.departureTime).getTime() > today.getTime() // Add this condition
+                      new Date(ride.departureTime).getTime() > today.getTime()
                   )
                   .map((ride) => (
                     <div
@@ -351,7 +403,6 @@ const RiderDashboard: React.FC = () => {
                       className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Left column: Ride info and primary actions */}
                         <div className="space-y-3">
                           <div className="flex items-center space-x-3">
                             <div className="flex items-center text-gray-600">
@@ -404,7 +455,6 @@ const RiderDashboard: React.FC = () => {
                             Payments are received only through cash.
                           </div>
 
-                          {/* Primary action buttons - moved here */}
                           <div className="flex flex-wrap gap-2 pt-2">
                             {ride.status === RideStatus.SCHEDULED &&
                               canStartRide(ride.departureTime) && (
@@ -439,7 +489,6 @@ const RiderDashboard: React.FC = () => {
                               </button>
                             )}
 
-                            {/* Secondary action buttons */}
                             {ride.status === RideStatus.SCHEDULED && (
                               <>
                                 {canEditRide(confirmedBookings) && (
@@ -463,12 +512,20 @@ const RiderDashboard: React.FC = () => {
                                     Cancel Ride
                                   </button>
                                 )}
+
+                                   <button
+                                    onClick={() => handleGetNews(ride)}
+                                    disabled={isFetchingNews}
+                                    className="px-3 py-1.5 text-sm text-blue-500 hover:text-blue-700 flex items-center"
+                                  >
+                                    <Newspaper size={16} className="inline-block mr-1" />
+                                    {isFetchingNews ? "Fetching News..." : "News"}
+                                  </button>
                               </>
                             )}
                           </div>
                         </div>
 
-                        {/* Right column: Passengers and message update */}
                         <div className="flex flex-col justify-between h-full">
                           <div>
                             <h4 className="font-medium text-gray-700 mb-2">
@@ -491,7 +548,7 @@ const RiderDashboard: React.FC = () => {
                                           className="mr-1.5 flex-shrink-0"
                                         />
                                         <span className="truncate">
-                                          {booking.passenger.firstName}{" "}
+                                          {booking.passenger.firstName}
                                           {booking.passenger.lastName}
                                         </span>
                                       </p>
@@ -513,7 +570,6 @@ const RiderDashboard: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Pre-ride update component */}
                           {ride.status === RideStatus.SCHEDULED &&
                             canStartRide(ride.departureTime) && (
                               <div className="mt-3">
@@ -542,6 +598,13 @@ const RiderDashboard: React.FC = () => {
             )}
           </>
         )}
+           <NewsModal
+                isOpen={isNewsModalOpen}
+                onClose={closeNewsModal}
+                articles={newsArticles}
+                error={newsError}
+                destination={selectedRideDestination || ""}
+            />
       </div>
     </Layout>
   );
