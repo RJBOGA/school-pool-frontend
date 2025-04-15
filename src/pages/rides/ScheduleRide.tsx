@@ -153,6 +153,11 @@ const ScheduleRide = () => {
         destinationCoordinates.lng
       );
       setNewsArticles(data.articles);
+        const negative = await newsService.getNegativeNewsByGeo(
+          destinationCoordinates.lat,
+          destinationCoordinates.lng
+        );
+        console.log("negativeNews", negative)
     } catch (err: any) {
       setNewsError(err.message || "Failed to fetch news");
     } finally {

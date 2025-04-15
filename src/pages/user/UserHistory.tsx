@@ -46,14 +46,15 @@ const UserHistory = () => {
       setIsLoading(true);
       const userBookings = await bookingService.getUserBookings(user!.phone);
 
-      const history = userBookings.filter(
-        (booking) =>
-          booking.status === BookingStatus.COMPLETED ||
-          BookingStatus.CANCELLED ||
-          new Date(booking.ride.departureTime) < new Date()
+      // Separate completed and cancelled rides
+      const completedRides = userBookings.filter(
+        (booking) => booking.status === BookingStatus.COMPLETED
       );
-
-      setRideHistory(history);
+      const cancelledRides = userBookings.filter(
+        (booking) => booking.status === BookingStatus.CANCELLED
+      );
+      setRideHistory([...completedRides, ...cancelledRides]);
+      //setRideHistory(history);
     } catch (error) {
       console.error("Error loading user rides:", error);
     } finally {
@@ -131,8 +132,16 @@ const UserHistory = () => {
             <p className="text-gray-500">No ride history.</p>
           </div>
         ) : (
+          <>
+          {rideHistory.filter((booking) => booking.status === BookingStatus.COMPLETED)
+          .length > 0 && (
+          <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  Completed Rides
+                </h3>
           <div className="space-y-4">
-            {rideHistory.map((booking) => (
+            {rideHistory.filter((booking)=> booking.status === BookingStatus.COMPLETED)
+            .map((booking) => (
               <div
                 key={booking.id}
                 className="bg-white rounded-lg shadow p-6 opacity-75"
@@ -173,6 +182,62 @@ const UserHistory = () => {
               </div>
             ))}
           </div>
+          </div>)}
+          
+          {/* CANCELLED */}
+          {rideHistory.filter((booking) => booking.status === BookingStatus.CANCELLED).length > 0 && (
+          <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  Cancelled Rides
+                </h3>
+          <div className="space-y-4">
+            {rideHistory
+            .filter((booking) => booking.status === BookingStatus.CANCELLED)
+            .map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-white rounded-lg shadow p-6 opacity-75"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold">
+                    Ride with {booking.ride.driver.firstName}
+                  </h3>
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+                    {booking.status}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <MapPin size={20} className="mr-2" />
+                    {booking.ride.origin} → {booking.ride.destination}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Calendar size={20} className="mr-2" />
+                    {formatDateTime(booking.ride.departureTime)}
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <DollarSign size={20} className="mr-2" />$
+                    {booking.ride.price}
+                  </div>
+                  <RatingDisplay bookingId={booking.id} />
+                  {booking.status === BookingStatus.COMPLETED &&
+                    !reviews[booking.id] && (
+                      <button
+                        onClick={() => handleRateRide(booking)}
+                        className="mt-2 flex items-center text-primary-600 hover:text-primary-700"
+                      >
+                        <Star size={20} className="mr-2" />
+                        Rate this ride
+                      </button>
+                    )}
+                </div>
+              </div>
+            ))}
+          </div>
+          </div>
+          )}
+          </>
+          
         )}
 
         {selectedBooking && (

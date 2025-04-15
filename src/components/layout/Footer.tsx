@@ -70,8 +70,8 @@ const Footer: React.FC = () => {
             <div className="space-y-2">
               <p className="flex items-center text-gray-600">
                 <Mail size={16} className="mr-2" />
-                <a href="mailto:support@schoolpool.com" className="hover:text-primary-600">
-                  support@schoolpool.com
+                <a href="mailto:schoolpool@gmail.com" className="hover:text-primary-600">
+                  schoolpool@gmail.com
                 </a>
               </p>
             </div>

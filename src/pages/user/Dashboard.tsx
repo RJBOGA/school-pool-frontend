@@ -195,8 +195,9 @@ const UserDashboard = () => {
   const handleCancelBooking = async (bookingId: string) => {
     try {
       await bookingService.cancelBooking(bookingId);
-      await loadUserRides();
       await loadWaitlistCounts();
+      await loadUserRides();
+      await loadRides();
     } catch (error: any) {
       alert(error.message || "Failed to cancel booking");
     }

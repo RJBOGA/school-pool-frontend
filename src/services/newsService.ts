@@ -62,6 +62,16 @@ class NewsService {
       throw error;
     }
   }
+
+  async getNegativeNewsByGeo(latitude: number, longitude: number): Promise<FilteredNewsResponse> { // Changed method name and return type
+    try {
+      const response = await this.newsApi.get<FilteredNewsResponse>(`${this.BASE_PATH}/geo/${latitude}/${longitude}/negative_sentiment`); // Use newsApi
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching negative news by geo:", error);
+      throw error;
+    }
+  }
 }
 
 export default new NewsService();

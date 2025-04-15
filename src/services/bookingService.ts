@@ -97,7 +97,7 @@ class BookingService {
 
       const updatedRide = {
         ...booking.ride,
-        availableSeats: booking.ride.availableSeats + 1,
+        availableSeats: booking.ride.availableSeats,
         id: booking.ride.id, // Ensure id is included
       };
       // Only send the required fields for update
